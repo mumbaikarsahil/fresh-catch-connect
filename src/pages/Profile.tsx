@@ -1,7 +1,7 @@
 import React from 'react';
 import { Phone, Instagram, MapPin, Clock, Shield } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { MobileLayout } from '@/components/layout/MobileLayout';
+import { ResponsiveLayout } from '@/components/layout/ResponsiveLayout';
 import { CartDrawer } from '@/components/CartDrawer';
 import { WHATSAPP_NUMBER } from '@/data/products';
 import logo from '@/assets/logo.jpg';
@@ -12,28 +12,28 @@ const Profile = () => {
   };
 
   return (
-    <MobileLayout>
-      <div className="p-4 space-y-6">
+    <ResponsiveLayout>
+      <div className="p-4 lg:p-0 space-y-6 lg:max-w-2xl lg:mx-auto">
         {/* Business Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-card rounded-2xl p-6 text-center shadow-card"
+          className="bg-card rounded-2xl p-6 lg:p-8 text-center shadow-card"
         >
           <img
             src={logo}
             alt="The Fishy Mart"
-            className="w-24 h-24 rounded-full mx-auto mb-4 object-cover border-4 border-primary/20"
+            className="w-24 h-24 lg:w-32 lg:h-32 rounded-full mx-auto mb-4 object-cover border-4 border-primary/20"
           />
-          <h1 className="text-xl font-bold text-card-foreground">The Fishy Mart</h1>
-          <p className="text-primary font-medium text-sm">#FishKhaoOnlyFresh</p>
-          <p className="text-muted-foreground text-sm mt-2">
+          <h1 className="text-xl lg:text-2xl font-bold text-card-foreground">The Fishy Mart</h1>
+          <p className="text-primary font-medium text-sm lg:text-base">#FishKhaoOnlyFresh</p>
+          <p className="text-muted-foreground text-sm lg:text-base mt-2">
             Fresh fish delivery across Mumbai. Quality you can trust.
           </p>
         </motion.div>
 
         {/* Info Cards */}
-        <div className="space-y-3">
+        <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
           <motion.button
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -113,7 +113,7 @@ const Profile = () => {
       </div>
 
       <CartDrawer />
-    </MobileLayout>
+    </ResponsiveLayout>
   );
 };
 

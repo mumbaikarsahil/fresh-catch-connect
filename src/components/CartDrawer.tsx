@@ -55,7 +55,7 @@ export function CartDrawer() {
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed bottom-0 left-0 right-0 z-50 max-w-[430px] mx-auto"
+            className="fixed bottom-0 left-0 right-0 z-50 max-w-[430px] lg:max-w-lg mx-auto"
             style={{ paddingBottom: 'var(--safe-area-bottom)' }}
           >
             <div className="bg-card rounded-t-3xl shadow-sheet max-h-[85vh] flex flex-col">
