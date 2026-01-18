@@ -1,14 +1,16 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, Search, ShoppingCart, User } from 'lucide-react';
+import { Home, Search, User } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useCart } from '@/context/CartContext';
 import { cn } from '@/lib/utils';
 import { DesktopSidebar } from './DesktopSidebar';
+import { FloatingCartBar } from '../FloatingCartBar';
 
 interface ResponsiveLayoutProps {
   children: React.ReactNode;
   showBottomNav?: boolean;
+  hideFloatingCart?: boolean; // New prop
 }
 
 interface NavItemProps {
@@ -25,34 +27,51 @@ function MobileNavItem({ icon, label, isActive, onClick, badge }: NavItemProps) 
     <button
       onClick={onClick}
       className={cn(
-        "flex flex-col items-center justify-center gap-0.5 flex-1 py-2 transition-colors relative",
-        isActive ? "text-primary" : "text-muted-foreground"
+        "flex flex-col items-center justify-center gap-1 flex-1 py-2 transition-all relative group",
+        isActive ? "text-primary" : "text-muted-foreground hover:text-gray-600"
       )}
     >
       <div className="relative">
-        {icon}
+        <div className={cn("transition-transform duration-200", isActive && "-translate-y-0.5")}>
+          {icon}
+        </div>
+        
+        {/* Badge Notification */}
         {badge && badge > 0 && (
           <motion.span
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            className="absolute -top-1.5 -right-2 bg-accent text-accent-foreground text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center"
+            className="absolute -top-1.5 -right-2 bg-red-500 text-white text-[10px] font-bold min-w-[16px] h-[16px] rounded-full flex items-center justify-center border-2 border-white"
           >
             {badge > 99 ? '99+' : badge}
           </motion.span>
         )}
       </div>
-      <span className="text-[10px] font-medium">{label}</span>
+      
+      <span className={cn(
+        "text-[10px] font-medium transition-opacity",
+        isActive ? "opacity-100 font-semibold" : "opacity-80"
+      )}>
+        {label}
+      </span>
+      
+      {/* Active Indicator Dot */}
       {isActive && (
         <motion.div
           layoutId="activeNav"
-          className="absolute -top-0.5 w-1 h-1 rounded-full bg-primary"
+          className="absolute top-0 w-8 h-1 rounded-b-lg bg-primary/80"
+          transition={{ type: "spring", stiffness: 300, damping: 30 }}
         />
       )}
     </button>
   );
 }
 
-export function ResponsiveLayout({ children, showBottomNav = true }: ResponsiveLayoutProps) {
+export function ResponsiveLayout({ 
+  children, 
+  showBottomNav = true,
+  hideFloatingCart = false 
+}: ResponsiveLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { totalItems, setIsCartOpen } = useCart();
@@ -60,11 +79,11 @@ export function ResponsiveLayout({ children, showBottomNav = true }: ResponsiveL
   const navItems = [
     { icon: <Home className="w-5 h-5" />, label: 'Home', path: '/' },
     { icon: <Search className="w-5 h-5" />, label: 'Search', path: '/search' },
-    { icon: <ShoppingCart className="w-5 h-5" />, label: 'Cart', path: '/cart' },
     { icon: <User className="w-5 h-5" />, label: 'Profile', path: '/profile' },
   ];
 
   const handleNavClick = (path: string) => {
+    // If you want special handling for cart in nav, keep it, otherwise just navigate
     if (path === '/cart') {
       setIsCartOpen(true);
     } else {
@@ -73,43 +92,53 @@ export function ResponsiveLayout({ children, showBottomNav = true }: ResponsiveL
   };
 
   return (
-    <div className="min-h-screen bg-ocean-gradient flex">
-      {/* Desktop Sidebar */}
+    <div className="min-h-screen bg-gray-50/50 flex text-gray-900 font-sans">
+      {/* Desktop Sidebar (Left) */}
       <DesktopSidebar />
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col">
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0">
         <main
           className={cn(
-            "flex-1 w-full mx-auto bg-background/50 backdrop-blur-sm",
-            "lg:bg-transparent lg:backdrop-blur-none lg:max-w-none",
-            showBottomNav && "pb-[calc(var(--bottom-nav-height)+var(--safe-area-bottom))] lg:pb-0"
+            "flex-1 w-full mx-auto",
+            // Mobile adjustments
+            showBottomNav && "pb-[calc(var(--bottom-nav-height)+2rem)] lg:pb-0", 
+            // Desktop constraints
+            "lg:max-w-none"
           )}
-          style={{ paddingTop: 'var(--safe-area-top)' }}
+          style={{ 
+            paddingTop: 'var(--safe-area-top)', 
+            '--bottom-nav-height': '60px',
+            '--safe-area-bottom': 'env(safe-area-inset-bottom)'
+          } as React.CSSProperties}
         >
-          <div className="lg:max-w-6xl lg:mx-auto lg:p-6">
-            {children}
-          </div>
+          {/* We remove max-w constraints here to let children control full width (like hero banners) */}
+          {children}
         </main>
 
-        {/* Mobile Bottom Navigation */}
+        {/* --- Mobile Bottom Navigation Elements --- */}
         {showBottomNav && (
-          <nav
-            className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-sheet border-t border-border z-50 lg:hidden"
-            style={{ paddingBottom: 'var(--safe-area-bottom)' }}
-          >
-            <div className="max-w-[430px] mx-auto flex items-center h-[var(--bottom-nav-height)]">
-              {navItems.map((item) => (
-                <MobileNavItem
-                  key={item.path}
-                  {...item}
-                  isActive={location.pathname === item.path}
-                  onClick={() => handleNavClick(item.path)}
-                  badge={item.path === '/cart' ? totalItems : undefined}
-                />
-              ))}
-            </div>
-          </nav>
+          <>
+            {/* 1. Floating Cart Bar (Conditional) */}
+            {!hideFloatingCart && <FloatingCartBar />}
+
+            {/* 2. Bottom Tab Bar */}
+            <nav
+              className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 lg:hidden shadow-[0_-5px_20px_rgba(0,0,0,0.03)]"
+              style={{ paddingBottom: 'var(--safe-area-bottom)' }}
+            >
+              <div className="flex items-center h-[60px] max-w-md mx-auto px-2">
+                {navItems.map((item) => (
+                  <MobileNavItem
+                    key={item.path}
+                    {...item}
+                    isActive={location.pathname === item.path}
+                    onClick={() => handleNavClick(item.path)}
+                  />
+                ))}
+              </div>
+            </nav>
+          </>
         )}
       </div>
     </div>

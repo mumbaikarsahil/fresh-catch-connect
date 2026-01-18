@@ -1,23 +1,45 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Search as SearchIcon, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ResponsiveLayout } from '@/components/layout/ResponsiveLayout';
 import { ProductCard } from '@/components/ProductCard';
 import { CartDrawer } from '@/components/CartDrawer';
-import { products } from '@/data/products';
+import { getProducts } from '@/data/products';
+import { Product } from '@/types/product';
 import { Input } from '@/components/ui/input';
 
 const Search = () => {
   const [query, setQuery] = useState('');
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const data = await getProducts();
+        setProducts(data);
+      } catch (err) {
+        console.error('Error fetching products:', err);
+        setError('Failed to load products. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
 
   const filteredProducts = useMemo(() => {
+    if (loading || error) return [];
     if (!query.trim()) return products;
+    
     const lowerQuery = query.toLowerCase();
     return products.filter(
       (p) =>
         p.name.toLowerCase().includes(lowerQuery) ||
-        p.description.toLowerCase().includes(lowerQuery) ||
-        p.category.toLowerCase().includes(lowerQuery)
+        (p.description && p.description.toLowerCase().includes(lowerQuery)) ||
+        (p.category && p.category.toLowerCase().includes(lowerQuery))
     );
   }, [query]);
 
