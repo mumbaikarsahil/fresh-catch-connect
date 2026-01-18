@@ -24,7 +24,12 @@ export default function CartPage() {
   const [address, setAddress] = useState('');
   const [isLoadingAddress, setIsLoadingAddress] = useState(false);
   const [customerAddresses, setCustomerAddresses] = useState<Record<string, string>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false); // Add this new state
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Scroll to top when component mounts
+  React.useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   // ... (Keep your existing fetchCustomerAddress, handlePhoneChange, generateWhatsAppLink logic here) ...
   // Re-paste that logic if you need to, or I can include it all if you prefer. 
@@ -198,6 +203,7 @@ export default function CartPage() {
                     value={phone}
                     onChange={handlePhoneChange}
                     maxLength={10}
+                    autoFocus
                     className="pl-10 h-12 bg-gray-50 border-transparent focus:bg-white focus:border-black/20 rounded-xl transition-all font-medium text-base"
                   />
                   {isLoadingAddress && (
