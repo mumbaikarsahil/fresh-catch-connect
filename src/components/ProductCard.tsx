@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Minus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Product } from '@/types/product';
@@ -14,23 +14,14 @@ export function ProductCard({ product, index }: ProductCardProps) {
   const { addToCart, updateQuantity, getItemQuantity } = useCart();
   const [imageError, setImageError] = useState(false);
   const [isImageLoading, setIsImageLoading] = useState(true);
-  const imgRef = useRef<HTMLImageElement>(null); // 1. Create a Ref
-  
   const quantity = getItemQuantity(product.id);
   const isSoldOut = !product.in_stock;
-
-  // Reset state when product changes
+  
+  // Reset loading state when product changes
   useEffect(() => {
     setImageError(false);
     setIsImageLoading(true);
   }, [product.imageName]);
-
-  // 2. The Fix: Check if image is already loaded from cache
-  useEffect(() => {
-    if (imgRef.current && imgRef.current.complete) {
-      setIsImageLoading(false);
-    }
-  }, []);
 
   return (
     <motion.div
@@ -43,20 +34,17 @@ export function ProductCard({ product, index }: ProductCardProps) {
     >
       {/* Image Container */}
       <div className="relative aspect-square overflow-hidden bg-gray-100">
-        
         {/* Loading Skeleton */}
         {isImageLoading && !imageError && (
-          <div className="absolute inset-0 bg-gray-200 animate-pulse z-10"></div>
+          <div className="absolute inset-0 bg-gray-200 animate-pulse"></div>
         )}
         
         {/* Main Image */}
         <AnimatePresence mode="wait">
           {!imageError ? (
             <motion.img
-              ref={imgRef} // 3. Attach the Ref here
               key="product-image"
-              // TIP: Moving images to the 'public' folder is better than linking to /src
-              src={`/src/assets/${product.imageName}`} 
+              src={`/public/${product.imageName}`}
               alt={product.name}
               className="w-full h-full object-cover"
               loading="lazy"
@@ -87,7 +75,7 @@ export function ProductCard({ product, index }: ProductCardProps) {
         </AnimatePresence>
         
         {/* Badges */}
-        <div className="absolute top-2 left-2 flex flex-col gap-1 z-20"> {/* Added z-20 so it sits above skeleton */}
+        <div className="absolute top-2 left-2 flex flex-col gap-1">
           <AnimatePresence>
             {isSoldOut && (
               <motion.span 
@@ -115,7 +103,6 @@ export function ProductCard({ product, index }: ProductCardProps) {
 
       {/* Content */}
       <div className="p-3">
-        {/* ... (Rest of your component remains the same) ... */}
         <h3 className="font-semibold text-card-foreground text-sm leading-tight mb-0.5">
           {product.name}
         </h3>
@@ -124,12 +111,14 @@ export function ProductCard({ product, index }: ProductCardProps) {
         </p>
 
         <div className="flex items-center justify-between">
+          {/* Price */}
           <div className="flex items-baseline gap-1">
             <span className="text-lg font-bold text-secondary">₹{product.price}</span>
             <span className="text-xs text-muted-foreground">/{product.unit}</span>
           </div>
 
-          <div className="flex-shrink-0">
+          {/* Add/Quantity Controls */}
+          <div className="flex-shrink-0"> {/* Prevents controls from being squashed */}
             {quantity === 0 ? (
               <button
                 onClick={() => addToCart(product)}
@@ -148,19 +137,25 @@ export function ProductCard({ product, index }: ProductCardProps) {
               <motion.div
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
+                // UPDATED CONTAINER: Compact gray pill shape, no large gaps
                 className="flex items-center bg-gray-100 rounded-md h-8"
               >
                 <button
                   onClick={() => updateQuantity(product.id, quantity - 1)}
+                  // UPDATED BUTTON: Explicit small size (w-8 h-full) to prevent overflow
                   className="w-8 h-full flex items-center justify-center text-gray-600 hover:text-red-500 hover:bg-gray-200 rounded-l-md transition-colors"
                 >
                   <Minus className="w-3.5 h-3.5" />
                 </button>
+                
+                {/* Quantity Text */}
                 <span className="w-6 text-center font-semibold text-sm tabular-nums text-gray-900">
                   {quantity}
                 </span>
+                
                 <button
                   onClick={() => updateQuantity(product.id, quantity + 1)}
+                  // UPDATED BUTTON: Explicit small size
                   className="w-8 h-full flex items-center justify-center text-gray-600 hover:text-green-500 hover:bg-gray-200 rounded-r-md transition-colors"
                 >
                   <Plus className="w-3.5 h-3.5" />
