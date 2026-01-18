@@ -5,6 +5,7 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  base: '/',  // Ensure base is set for Vercel
   server: {
     host: "::",
     port: 8080,
@@ -13,6 +14,10 @@ export default defineConfig(({ mode }) => ({
     },
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
+  build: {
+    outDir: 'dist',  // Ensure build output goes to 'dist' directory
+    sourcemap: true,  // Help with debugging
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

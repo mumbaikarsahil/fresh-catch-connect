@@ -247,7 +247,7 @@ export default function CartPage() {
                     >
                       <div className="w-16 h-16 rounded-lg bg-gray-50 flex-shrink-0 overflow-hidden border border-gray-100">
                         <img
-                          src={`/src/assets/${item.product.imageName}`}
+                          src={`/${item.product.imageName}`}
                           alt={item.product.name}
                           className="w-full h-full object-cover"
                         />
