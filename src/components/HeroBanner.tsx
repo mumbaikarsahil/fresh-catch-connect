@@ -25,7 +25,7 @@ export function HeroBanner() {
           </div>
           <h2 className="text-xl lg:text-3xl font-bold mb-1">Today's Fresh Catch</h2>
           <p className="text-sm lg:text-base opacity-90 mb-3 lg:mb-0">
-            Farm fresh fish delivered to your doorstep across Mumbai
+            Fresh fish delivered to your doorstep across Mumbai
           </p>
         </div>
         <div className="inline-flex items-center gap-2 bg-accent text-accent-foreground px-4 py-2 lg:px-6 lg:py-3 rounded-full text-sm lg:text-base font-semibold">
