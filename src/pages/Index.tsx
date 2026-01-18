@@ -1,13 +1,33 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import React from 'react';
+import { MobileLayout } from '@/components/layout/MobileLayout';
+import { Header } from '@/components/layout/Header';
+import { HeroBanner } from '@/components/HeroBanner';
+import { ProductCard } from '@/components/ProductCard';
+import { CartDrawer } from '@/components/CartDrawer';
+import { products } from '@/data/products';
 
 const Index = () => {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <MobileLayout>
+      <Header />
+      <HeroBanner />
+
+      {/* Category Title */}
+      <div className="px-4 mt-6 mb-3">
+        <h2 className="text-lg font-bold text-foreground">Today's Menu</h2>
+        <p className="text-sm text-muted-foreground">Fresh catches available now</p>
       </div>
-    </div>
+
+      {/* Product Grid */}
+      <div className="px-4 pb-6 grid grid-cols-2 gap-3">
+        {products.map((product, index) => (
+          <ProductCard key={product.id} product={product} index={index} />
+        ))}
+      </div>
+
+      {/* Cart Drawer */}
+      <CartDrawer />
+    </MobileLayout>
   );
 };
 
