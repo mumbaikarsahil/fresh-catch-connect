@@ -23,9 +23,8 @@ import { getProducts } from '@/data/products';
 import { Product } from '@/types/product';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { supabase } from '../lib/supabase';
-import type { Database } from '../lib/supabase';
-import { Order, OrderItem } from '@/types/order'; // Ensure you have this type defined
+import { supabase } from '@/lib/supabase';
+import { Order, OrderItem } from '@/types/order'; 
 
 // --- Components ---
 
@@ -42,7 +41,7 @@ function StatCard({ icon: Icon, label, value, color }: { icon: React.ElementType
 }
 
 function OrderCard({ order, onConfirm }: { order: Order; onConfirm: (order: Order) => void }) {
-  const items = order.items as unknown as OrderItem[]; // Cast JSON to OrderItem[]
+  const items = order.items as unknown as OrderItem[]; 
   
   return (
     <motion.div layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
@@ -64,7 +63,6 @@ function OrderCard({ order, onConfirm }: { order: Order; onConfirm: (order: Orde
         <p className="text-xs text-gray-400">{new Date(order.created_at!).toLocaleDateString()}</p>
       </div>
 
-      {/* Order Items Summary */}
       <div className="bg-gray-50 rounded-lg p-3 mb-3 text-sm space-y-1">
         {items.map((item, idx) => (
           <div key={idx} className="flex justify-between text-gray-600">
@@ -78,7 +76,6 @@ function OrderCard({ order, onConfirm }: { order: Order; onConfirm: (order: Orde
         </div>
       </div>
 
-      {/* Customer Details */}
       <div className="space-y-2 mb-4">
         <div className="flex items-start gap-2 text-xs text-gray-500">
           <MapPin className="w-3 h-3 mt-0.5 flex-shrink-0" />
@@ -90,7 +87,6 @@ function OrderCard({ order, onConfirm }: { order: Order; onConfirm: (order: Orde
         </div>
       </div>
 
-      {/* Action Buttons */}
       {order.status !== 'confirmed' ? (
         <button
           onClick={() => onConfirm(order)}
@@ -119,16 +115,14 @@ const Admin = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // 1. Fetch Data (Products & Orders)
+  // 1. Fetch Data
   useEffect(() => {
     const loadData = async () => {
       try {
         setIsLoading(true);
-        // Fetch Products
         const productData = await getProducts();
         setProducts(productData);
 
-        // Fetch Orders
         const { data: orderData, error } = await supabase
           .from('orders')
           .select('*')
@@ -146,7 +140,7 @@ const Admin = () => {
 
     loadData();
     
-    // Optional: Real-time subscription for new orders
+    // Real-time subscription
     const subscription = supabase
       .channel('admin-orders')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, 
@@ -159,13 +153,12 @@ const Admin = () => {
     return () => { subscription.unsubscribe(); };
   }, []);
 
-  // 2. Calculate Real Analytics
+  // 2. Analytics
   const analytics = useMemo(() => {
     const totalOrders = orders.length;
     const totalRevenue = orders.reduce((sum, order) => sum + (Number(order.total_amount) || 0), 0);
     const pendingOrders = orders.filter(o => o.status === 'pending').length;
     
-    // Simple revenue by day calculation (last 7 days)
     const today = new Date();
     const last7Days = Array.from({ length: 7 }, (_, i) => {
         const d = new Date();
@@ -186,10 +179,9 @@ const Admin = () => {
     return { totalOrders, totalRevenue, pendingOrders, revenueByDay };
   }, [orders]);
 
-  // 3. Handle Order Confirmation & WhatsApp
+  // 3. Confirm Order
   const handleConfirmOrder = async (order: Order) => {
     try {
-      // A. Update Status in Supabase
       const { error } = await (supabase as any)
         .from('orders')
         .update({
@@ -200,7 +192,6 @@ const Admin = () => {
 
       if (error) throw error;
 
-      // B. Update Local State
       setOrders(prev => prev.map(o => 
         o.id === order.id 
           ? { 
@@ -211,14 +202,12 @@ const Admin = () => {
           : o
       ));
 
-      // C. Construct WhatsApp Message
       const itemsList = (order.items as unknown as OrderItem[])
         .map(i => `• ${i.quantity}x ${i.name}`)
         .join('\n');
       
       const message = `*Order Confirmed!* ✅\n\nHello ${order.customer_name}, your order #${order.id} has been accepted.\n\n*Order Details:*\n${itemsList}\n\n*Total Amount:* ₹${order.total_amount}\n\nWe will update you when your fresh catch is out for delivery! 🛵`;
       
-      // D. Redirect to WhatsApp
       const whatsappUrl = `https://wa.me/${order.phone_number.replace(/\D/g,'')}?text=${encodeURIComponent(message)}`;
       window.open(whatsappUrl, '_blank');
 
@@ -228,18 +217,12 @@ const Admin = () => {
     }
   };
 
-  // Inventory Handlers (Mocked for now, connect to DB if needed)
   const handleToggleStock = (productId: string) => {
     setProducts(prev => prev.map(p => p.id === productId ? { ...p, in_stock: !p.in_stock } : p));
-  };
-  
-  const handlePriceChange = (productId: string, price: number) => {
-    setProducts(prev => prev.map(p => p.id === productId ? { ...p, price } : p));
   };
 
   return (
     <div className="min-h-screen bg-[#f4f5f7] pb-20">
-      {/* Header */}
       <header className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -260,7 +243,7 @@ const Admin = () => {
 
       <main className="max-w-7xl mx-auto p-4 lg:p-8 space-y-8">
         
-        {/* 1. Analytics Section */}
+        {/* Analytics Section */}
         <section>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
@@ -292,14 +275,13 @@ const Admin = () => {
 
         <div className="grid lg:grid-cols-3 gap-8">
           
-          {/* 2. Order Management (Takes up 2 columns) */}
+          {/* Order Management */}
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                 Recent Orders
                 <span className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">{orders.length}</span>
               </h2>
-              {/* Optional Search */}
               <div className="hidden md:flex items-center bg-white border rounded-lg px-3 py-1.5 w-64">
                  <Search className="w-4 h-4 text-gray-400 mr-2" />
                  <input type="text" placeholder="Search orders..." className="text-sm outline-none w-full" />
@@ -324,7 +306,7 @@ const Admin = () => {
             )}
           </div>
 
-          {/* 3. Inventory Management (Takes up 1 column on side) */}
+          {/* Quick Inventory */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-gray-900">Quick Inventory</h2>
@@ -334,7 +316,12 @@ const Admin = () => {
               {products.map((product) => (
                 <div key={product.id} className="p-3 flex items-center justify-between hover:bg-gray-50 transition-colors group">
                   <div className="flex items-center gap-3">
-                    <img src={`/src/assets/${product.imageName}`} className="w-10 h-10 rounded-lg object-cover bg-gray-100" />
+                    {/* 👇 UPDATED PATH HERE */}
+                    <img 
+                      src={`/assets/${product.imageName}`} 
+                      className="w-10 h-10 rounded-lg object-cover bg-gray-100" 
+                      alt={product.name}
+                    />
                     <div>
                       <p className="font-medium text-sm text-gray-900">{product.name}</p>
                       <p className="text-xs text-gray-500">₹{product.price}/{product.unit}</p>
@@ -358,7 +345,6 @@ const Admin = () => {
              </p>
           </div>
         </div>
-
       </main>
     </div>
   );
