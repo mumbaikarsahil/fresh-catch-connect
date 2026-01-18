@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Search as SearchIcon, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MobileLayout } from '@/components/layout/MobileLayout';
+import { ResponsiveLayout } from '@/components/layout/ResponsiveLayout';
 import { ProductCard } from '@/components/ProductCard';
 import { CartDrawer } from '@/components/CartDrawer';
 import { products } from '@/data/products';
@@ -22,16 +22,16 @@ const Search = () => {
   }, [query]);
 
   return (
-    <MobileLayout>
+    <ResponsiveLayout>
       {/* Search Header */}
-      <div className="sticky top-0 z-40 bg-card/95 backdrop-blur-sheet border-b border-border p-4">
-        <div className="relative">
+      <div className="sticky top-0 z-40 bg-card/95 backdrop-blur-sheet border-b border-border p-4 lg:relative lg:bg-transparent lg:border-none lg:p-0 lg:mb-6">
+        <div className="relative lg:max-w-xl">
           <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
           <Input
             placeholder="Search for fish, prawns..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="pl-10 pr-10 rounded-xl h-11"
+            className="pl-10 pr-10 rounded-xl h-11 lg:h-12 lg:text-base"
           />
           {query && (
             <button
@@ -45,7 +45,7 @@ const Search = () => {
       </div>
 
       {/* Results */}
-      <div className="p-4">
+      <div className="p-4 lg:p-0">
         <AnimatePresence mode="wait">
           {filteredProducts.length === 0 ? (
             <motion.div
@@ -66,7 +66,7 @@ const Search = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="grid grid-cols-2 gap-3"
+              className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-4"
             >
               {filteredProducts.map((product, index) => (
                 <ProductCard key={product.id} product={product} index={index} />
@@ -77,7 +77,7 @@ const Search = () => {
       </div>
 
       <CartDrawer />
-    </MobileLayout>
+    </ResponsiveLayout>
   );
 };
 
