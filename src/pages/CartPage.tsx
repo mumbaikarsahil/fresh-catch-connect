@@ -150,7 +150,7 @@ export default function CartPage() {
             onClick={() => navigate('/')}
             className="px-8 py-3 bg-[#1c1c1c] text-white rounded-lg font-semibold hover:bg-black transition-all shadow-lg shadow-gray-200"
           >
-            See Restaurants Near You
+            Return to Home
           </button>
         </div>
       </ResponsiveLayout>
