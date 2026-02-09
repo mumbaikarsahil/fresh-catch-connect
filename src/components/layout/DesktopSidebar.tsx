@@ -58,7 +58,7 @@ export function DesktopSidebar() {
     { icon: <Home className="w-5 h-5" />, label: 'Home', path: '/' },
     { icon: <Search className="w-5 h-5" />, label: 'Search', path: '/search' },
     { icon: <ShoppingCart className="w-5 h-5" />, label: 'Cart', path: '/cart' },
-    { icon: <User className="w-5 h-5" />, label: 'Profile', path: '/profile' },
+    { icon: <User className="w-5 h-5" />, label: 'more', path: '/profile' },
   ];
 
   const handleNavClick = (path: string) => {

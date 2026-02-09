@@ -1,33 +1,35 @@
 export type ProductUnit = 'kg' | 'plate' | '500g' | 'piece';
 export type ProductCategory = 'fish' | 'prawns' | 'crab' | 'other';
 
+// 1. The Base Logic
 export interface ProductBase {
   id: string;
-  created_at?: string;
-  updated_at?: string;
   name: string;
   description: string;
   price: number;
   unit: ProductUnit;
   imageName: string;
   category: ProductCategory;
-  in_stock: boolean;
-  low_stock: boolean;
+  stock_quantity: number;      // ✅ Matches DB default 0
+  stock_kg: number;            // ✅ Matches DB (Raw Weight)
+  cleaning_loss_percent: number; // ✅ Matches DB default 35
 }
 
-// For API responses (matches Supabase schema)
-export interface Product extends Omit<ProductBase, 'imageName' | 'in_stock' | 'low_stock'> {
-  imageName: string;
-  in_stock: boolean;
-  low_stock: boolean;
+// 2. The Database Shape (What Supabase returns)
+// snake_case keys to match SQL columns exactly
+export interface Product extends ProductBase {
+  created_at?: string;
+  updated_at?: string;
+  in_stock: boolean;     // DB column is in_stock
+  low_stock: boolean;    // DB column is low_stock
 }
 
-// For frontend usage (camelCase)
-export interface ProductUI extends Omit<ProductBase, 'imageName' | 'in_stock' | 'low_stock' | 'created_at' | 'updated_at'> {
-  imageName: string;
-  imageUrl: string;
-  inStock: boolean;
-  lowStock: boolean;
+// 3. The Frontend Shape (What your React components use)
+// camelCase keys for cleaner JavaScript usage
+export interface ProductUI extends ProductBase {
+  imageUrl: string;      // Generated URL (signed url from bucket)
+  inStock: boolean;      // Mapped from in_stock
+  lowStock: boolean;     // Mapped from low_stock
 }
 
 export interface CartItem {
@@ -49,5 +51,4 @@ export interface ProductsFilters {
   maxPrice?: number;
 }
 
-// Helper type for creating/updating products
 export type ProductFormData = Omit<Product, 'id' | 'created_at' | 'updated_at'>;

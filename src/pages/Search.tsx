@@ -5,12 +5,17 @@ import { ResponsiveLayout } from '@/components/layout/ResponsiveLayout';
 import { ProductCard } from '@/components/ProductCard';
 import { CartDrawer } from '@/components/CartDrawer';
 import { getProducts } from '@/data/products';
-import { Product } from '@/types/product';
+
+// 1. ✅ FIX: Import ProductUI instead of Product
+import { ProductUI } from '@/types/product'; 
 import { Input } from '@/components/ui/input';
 
 const Search = () => {
   const [query, setQuery] = useState('');
-  const [products, setProducts] = useState<Product[]>([]);
+  
+  // 2. ✅ FIX: Change the state type to ProductUI
+  const [products, setProducts] = useState<ProductUI[]>([]); 
+  
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -18,7 +23,7 @@ const Search = () => {
     const fetchProducts = async () => {
       try {
         const data = await getProducts();
-        setProducts(data);
+        setProducts(data); // Line 21 is now happy!
       } catch (err) {
         console.error('Error fetching products:', err);
         setError('Failed to load products. Please try again later.');
@@ -41,7 +46,7 @@ const Search = () => {
         (p.description && p.description.toLowerCase().includes(lowerQuery)) ||
         (p.category && p.category.toLowerCase().includes(lowerQuery))
     );
-  }, [query]);
+  }, [query, products, loading, error]);
 
   return (
     <ResponsiveLayout>
@@ -91,6 +96,7 @@ const Search = () => {
               className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-4"
             >
               {filteredProducts.map((product, index) => (
+                // Line 94 is now happy!
                 <ProductCard key={product.id} product={product} index={index} />
               ))}
             </motion.div>

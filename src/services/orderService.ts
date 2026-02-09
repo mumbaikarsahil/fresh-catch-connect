@@ -1,24 +1,27 @@
-import { Database, supabase } from '@/lib/supabase'; // Import from your typed file
+import { supabase } from '@/lib/supabase'; 
 import { CreateOrderData, Order, OrderStatus } from '@/types/order';
 
-export const createOrder = async (orderData: CreateOrderData): Promise<Order> => {
+export const createOrder = async (orderData: CreateOrderData): Promise<Order | null> => {
   const { data: { user } } = await supabase.auth.getUser();
   
-  // 1. Prepare the payload
+  // 1. Prepare payload
   const dbPayload = {
+    user_id: user?.id || null,
+    items: orderData.items, 
+    total_amount: orderData.total_amount,
     delivery_address: orderData.delivery_address,
     phone_number: orderData.phone_number,
-    total_amount: orderData.total_amount,
     customer_name: orderData.customer_name,
-    status: orderData.status || 'pending',
-    items: orderData.items, // We will cast this in the insert call below
-    user_id: user?.id || null,
+    status: orderData.status || 'pending', 
+    // ✅ ADDED: Pass the payment fields if they exist
+    payment_id: orderData.payment_id || null,
+    payment_status: orderData.payment_status || 'pending'
   };
 
-  // 2. Insert with explicit 'any' cast to silence strict TypeScript errors
-  const { data, error } = await supabase
-    .from('orders')
-    .insert([dbPayload] as any) // <--- FIX: This removes the red line
+  // 2. Insert call
+  // ✅ FIX: Cast the supabase query to 'any' to remove the Line 22 red line
+  const { data, error } = await (supabase.from('orders') as any)
+    .insert(dbPayload)
     .select()
     .single();
 
@@ -27,7 +30,7 @@ export const createOrder = async (orderData: CreateOrderData): Promise<Order> =>
     throw error;
   }
 
-  return data as unknown as Order;
+  return data as Order;
 };
 
 export const getUserOrders = async (): Promise<Order[]> => {
@@ -46,23 +49,23 @@ export const getUserOrders = async (): Promise<Order[]> => {
     return [];
   }
 
-  return data as unknown as Order[];
+  return data as Order[];
 };
 
-export const updateOrderStatus = async (orderId: string, status: OrderStatus): Promise<Order> => {
-  const { data, error } = await (supabase as any)
-    .from('orders')
-    .update({
-      status: status as string,
-      updated_at: new Date().toISOString()
-    })
-    .eq('id', parseInt(orderId))
+export const updateOrderStatus = async (
+  orderId: string,
+  status: OrderStatus
+): Promise<Order> => {
+  // ✅ FIX: Cast the supabase query to 'any' to remove the Line 62 red line
+  const { data, error } = await (supabase.from('orders') as any)
+    .update({ status }) 
+    .eq('id', orderId)
     .select()
     .single();
 
   if (error) {
     console.error('Error updating order status:', error);
-    throw new Error(error.message);
+    throw error;
   }
 
   return data as Order;

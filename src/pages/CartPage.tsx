@@ -1,396 +1,276 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Minus, Plus, ArrowLeft, MapPin, Phone, Receipt, ShoppingBag } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowLeft, MapPin, Phone, ShieldCheck, User } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
-import { WHATSAPP_NUMBER } from '@/data/products';
 import { CreateOrderData } from '@/types/order';
 import { Input } from '@/components/ui/input';
 import { ResponsiveLayout } from '@/components/layout/ResponsiveLayout';
 import { cn } from '@/lib/utils';
 import { createOrder } from '@/services/orderService';
+import { supabase } from '@/lib/supabase';
+
+// Declare Razorpay on window to avoid TS errors
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
 
 export default function CartPage() {
   const navigate = useNavigate();
-  const {
-    items,
-    updateQuantity,
-    totalAmount,
-    totalItems,
-    clearCart,
-  } = useCart();
+  const { items, totalAmount, totalItems, clearCart } = useCart();
   
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
-  const [isLoadingAddress, setIsLoadingAddress] = useState(false);
-  const [customerAddresses, setCustomerAddresses] = useState<Record<string, string>>({});
+  const [customerName, setCustomerName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false); // UX Feedback state
   
-  // Scroll to top when component mounts
-  React.useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
 
-  // ... (Keep your existing fetchCustomerAddress, handlePhoneChange, generateWhatsAppLink logic here) ...
-  // Re-paste that logic if you need to, or I can include it all if you prefer. 
-  // For brevity, I am showing the render fixes below.
-  
-  const fetchCustomerAddress = useCallback(async (phoneNumber: string) => {
-    setIsLoadingAddress(true);
+  useEffect(() => { window.scrollTo(0, 0); }, []);
+
+  // --- Auto-Fetch Logic using Supabase ---
+  const fetchCustomerData = useCallback(async (phoneNumber: string) => {
+    setIsLoadingDetails(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 800));
-      const mockCustomerData: Record<string, string> = {
-        '9876543210': '123 Main St, Bangalore, Karnataka 560001',
-        '9876543211': '456 Park Avenue, Mumbai, Maharashtra 400001',
-      };
-      setCustomerAddresses(prev => ({
-        ...prev,
-        [phoneNumber]: mockCustomerData[phoneNumber] || ''
-      }));
-      if (mockCustomerData[phoneNumber]) {
-        setAddress(mockCustomerData[phoneNumber]);
+      // Query the orders table for the most recent order with this phone number
+      const { data, error } = await supabase
+        .from('orders')
+        .select('customer_name, delivery_address')
+        .eq('phone_number', phoneNumber)
+        // Order by created_at descending to get the most recent order first
+        .order('created_at', { ascending: false })
+        // Limit to 1 because we only need the latest details
+        .limit(1)
+        .single(); 
+
+      if (error) {
+        // 'PGRST116' is the Supabase code for "no rows returned" (new customer)
+        if (error.code !== 'PGRST116') {
+          console.error('Error fetching customer data:', error);
+        }
+        return;
       }
-    } catch (error) {
-      console.error('Error fetching customer address:', error);
+
+      // If data is found, auto-fill the fields
+      if (data) {
+        const customer = data as { customer_name: string; delivery_address: string };
+        setCustomerName(customer.customer_name);
+        setAddress(customer.delivery_address);
+      }
+    } catch (err) {
+      console.error('Unexpected error during customer fetch:', err);
     } finally {
-      setIsLoadingAddress(false);
+      setIsLoadingDetails(false);
     }
   }, []);
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, '').slice(0, 10);
     setPhone(value);
+    
+    // Trigger fetch only when exactly 10 digits are entered
     if (value.length === 10) {
-      fetchCustomerAddress(value);
-    } else if (value.length === 0) {
-      setAddress('');
+      fetchCustomerData(value);
     }
   };
 
-  const generateWhatsAppLink = () => {
-    if (!phone) {
-      alert('Please enter your phone number');
-      return '#';
-    }
-    if (!address) {
-      alert('Please enter your delivery address');
-      return '#';
-    }
-    const itemsList = items
-      .map((item) => `• ${item.product.name} (${item.quantity} ${item.product.unit}) - ₹${item.product.price * item.quantity}`)
-      .join('\n');
-
-    const message = encodeURIComponent(
-      `*New Order*\n\n*Customer Phone:* ${phone}\n\n*Order Details:*\n${itemsList}\n\n*Total: ₹${totalAmount}*\n\n*Delivery Address:* ${address}`
-    );
-    return `https://wa.me/${WHATSAPP_NUMBER}?text=${message}`;
-  };
-
-  const handleCheckout = async () => {
-    if (!phone || !address) {
-      alert("Please fill in all details");
+  // --- PAYMENT LOGIC ---
+  const handlePayment = async () => {
+    if (!phone || !address || !customerName) {
+      alert("Please fill in Name, Phone, and Address");
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      // 1. Prepare the order data with proper typing
+      // 1. Create a Pending Order in Supabase FIRST
       const orderData: CreateOrderData = {
-        customer_name: "User",
+        customer_name: customerName,
         phone_number: phone,
         delivery_address: address,
-        total_amount: totalAmount + 5, // Including the platform fee
+        total_amount: totalAmount, 
+        status: 'pending', 
         items: items.map(item => ({
           productId: item.product.id,
           name: item.product.name,
           price: item.product.price,
-          quantity: item.quantity,
-          unit: item.product.unit,
+          quantity: item.quantity, 
+          quantity_kg: item.product.unit === 'kg' ? item.quantity : undefined,
+          unit: item.product.unit, 
           imageName: item.product.imageName
-        })),
+        }))
       };
 
-      // 2. Create the order using the order service
-      const order = await createOrder(orderData);
-      console.log('Order created successfully:', order);
+      const newOrder = await createOrder(orderData);
+      if (!newOrder) throw new Error("Failed to initialize order");
+
+      // 2. Create Razorpay Order securely via Supabase Client
+      const { data: razorpayOrder, error: funcError } = await supabase.functions.invoke('create-order', {
+        body: { amount: totalAmount }
+      });
+
+      if (funcError) throw new Error("Backend error: " + funcError.message);
+      if (!razorpayOrder?.id) throw new Error("Payment gateway failed");
+
+      // 3. Open Razorpay Modal
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID, 
+        amount: razorpayOrder.amount,
+        currency: "INR",
+        name: "The Fishy Mart",
+        description: "Fresh Fish Order",
+        order_id: razorpayOrder.id,
+        handler: async function (response: any) {
+          // --- SUCCESS PAYMENT HANDLER ---
+          // 4. Update Supabase Order to 'confirmed' / 'paid'
+          await (supabase.from('orders') as any).update({
+            status: 'confirmed',
+            payment_id: response.razorpay_payment_id,
+            payment_status: 'paid'
+          }).eq('id', newOrder.id);
+
+          // 5. Clear Cart & Redirect
+          clearCart();
+          alert(`Payment Successful! Order #${newOrder.id.slice(0,6)} placed.`);
+          navigate('/');
+        },
+        prefill: {
+          name: customerName,
+          contact: phone,
+        },
+        theme: {
+          color: "#1c1c1c",
+        },
+      };
+
+      const rzp1 = new window.Razorpay(options);
+      rzp1.on('payment.failed', function (response: any) {
+        alert("Payment Failed: " + response.error.description);
+        setIsSubmitting(false);
+      });
       
-      // 3. Generate WhatsApp link with order details
-      const whatsappLink = generateWhatsAppLink();
-      
-      // 4. Clear the cart
-      clearCart();
-      
-      // 5. Show success message and redirect to WhatsApp
-      alert('Order placed successfully! You will be redirected to WhatsApp for confirmation.');
-      
-      // 6. Redirect to WhatsApp in the same tab
-      window.location.href = whatsappLink;
+      rzp1.open();
 
     } catch (err) {
-      console.error('Error creating order:', err);
-      alert('Failed to create order. Please try again.');
-    } finally {
+      console.error('Error:', err);
+      alert('Something went wrong. Please try again.');
       setIsSubmitting(false);
     }
   };
 
   if (items.length === 0) {
-    return (
-      // FIX 1: Hide Bottom Nav here too
-      <ResponsiveLayout hideFloatingCart={true} showBottomNav={false}>
-        <div className="flex flex-col items-center justify-center min-h-[80vh] bg-gray-50/50">
-          <div className="w-64 h-64 bg-white rounded-full flex items-center justify-center mb-8 shadow-sm">
-            <img 
-               src="https://cdn-icons-png.flaticon.com/512/11329/11329060.png" 
-               alt="Empty Cart" 
-               className="w-32 h-32 opacity-50"
-            />
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Your cart is empty</h2>
-          <p className="text-gray-500 mt-2 mb-8 text-center max-w-xs">
-            Looks like you haven't added any fresh catches yet.
-          </p>
-          <button 
-            onClick={() => navigate('/')}
-            className="px-8 py-3 bg-[#1c1c1c] text-white rounded-lg font-semibold hover:bg-black transition-all shadow-lg shadow-gray-200"
-          >
-            Return to Home
-          </button>
-        </div>
-      </ResponsiveLayout>
-    );
+    return <div className="p-10 text-center">Cart is Empty</div>;
   }
 
   return (
-    // FIX 2: Added showBottomNav={false} to hide the menu bar
     <ResponsiveLayout hideFloatingCart={true} showBottomNav={false}>
       <div className="min-h-screen bg-[#f4f5f7] pb-32 md:pb-10">
         
         {/* Header */}
         <div className="sticky top-0 z-30 bg-white border-b border-gray-100 shadow-sm px-4 py-4">
           <div className="max-w-5xl mx-auto flex items-center gap-4">
-            <button onClick={() => navigate(-1)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+            <button onClick={() => navigate(-1)} className="p-2 hover:bg-gray-100 rounded-full">
               <ArrowLeft className="h-5 w-5 text-gray-700" />
             </button>
-            <div>
-              <h1 className="text-lg font-bold text-gray-900 leading-none">Checkout</h1>
-              <p className="text-xs text-gray-500 mt-1">{totalItems} items in cart</p>
-            </div>
+            <h1 className="text-lg font-bold text-gray-900">Checkout</h1>
           </div>
         </div>
 
-        <div className="max-w-5xl mx-auto px-4 py-6 md:py-8 grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
+        <div className="max-w-5xl mx-auto px-4 py-6 md:py-8 grid grid-cols-1 lg:grid-cols-12 gap-6">
           
           {/* LEFT COLUMN */}
           <div className="lg:col-span-8 space-y-6">
             
-            {/* Address Section */}
-            <div className="bg-white rounded-2xl p-5 md:p-6 shadow-sm border border-gray-100/50">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                  <MapPin className="h-5 w-5 text-gray-700" />
-                </div>
-                <h3 className="font-bold text-gray-900 text-lg">Delivery Details</h3>
+            {/* Address & User Info */}
+            <div className="bg-white rounded-2xl p-5 md:p-6 shadow-sm border border-gray-100/50 space-y-5">
+              <div className="flex items-center gap-3">
+                 <MapPin className="h-5 w-5 text-gray-700" />
+                 <h3 className="font-bold text-gray-900 text-lg">Delivery Details</h3>
               </div>
 
-              <div className="grid gap-5">
-                <div className="relative group">
-                  <Phone className="absolute left-3 top-3.5 h-4 w-4 text-gray-400 group-focus-within:text-black transition-colors" />
-                  <Input
-                    type="tel"
-                    placeholder="Mobile Number"
-                    value={phone}
-                    onChange={handlePhoneChange}
-                    maxLength={10}
-                    autoFocus
-                    className="pl-10 h-12 bg-gray-50 border-transparent focus:bg-white focus:border-black/20 rounded-xl transition-all font-medium text-base"
-                  />
-                  {isLoadingAddress && (
-                    <span className="absolute right-3 top-4 text-xs text-blue-600 font-medium animate-pulse">
-                      Locating...
-                    </span>
-                  )}
-                </div>
+              {/* 1. Phone Input (AT THE TOP) */}
+              <div className="relative">
+                 <Phone className="absolute left-3 top-3.5 h-4 w-4 text-gray-400" />
+                 <Input 
+                   type="tel" placeholder="Mobile Number" 
+                   value={phone} onChange={handlePhoneChange} maxLength={10}
+                   className="pl-10 h-12 bg-gray-50 border-transparent rounded-xl"
+                 />
+                 {isLoadingDetails && <span className="absolute right-3 top-3.5 text-xs text-blue-500 animate-pulse">Fetching details...</span>}
+              </div>
 
-                <div className="relative group">
-                  <MapPin className="absolute left-3 top-3.5 h-4 w-4 text-gray-400 group-focus-within:text-black transition-colors" />
-                  <textarea
-                    placeholder="Complete Address (House No, Building, Street, Landmark)"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    className="w-full min-h-[100px] pl-10 pt-3 pr-3 bg-gray-50 border border-transparent rounded-xl focus:bg-white focus:border-black/20 focus:ring-0 resize-none text-sm transition-all"
-                  />
-                  {customerAddresses[phone] && !isLoadingAddress && (
-                    <div className="absolute right-3 bottom-3">
-                      <span className="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wide">
-                        Saved
-                      </span>
-                    </div>
-                  )}
-                </div>
+              {/* 2. Name Input (AUTO-FILLS) */}
+              <div className="relative">
+                 <User className="absolute left-3 top-3.5 h-4 w-4 text-gray-400" />
+                 <Input 
+                   placeholder="Full Name" 
+                   value={customerName}
+                   onChange={(e) => setCustomerName(e.target.value)}
+                   className={cn("pl-10 h-12 bg-gray-50 border-transparent rounded-xl transition-all", customerName && "border-green-200 bg-green-50")}
+                 />
+              </div>
+
+              {/* 3. Address Input (AUTO-FILLS) */}
+              <div className="relative">
+                 <textarea 
+                   placeholder="Full Address" 
+                   value={address} onChange={(e) => setAddress(e.target.value)}
+                   className={cn("w-full min-h-[100px] p-3 bg-gray-50 border border-transparent rounded-xl text-sm transition-all", address && "border-green-200 bg-green-50")}
+                 />
               </div>
             </div>
 
-            {/* Cart Items List */}
-            <div className="bg-white rounded-2xl p-5 md:p-6 shadow-sm border border-gray-100/50">
-               <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                  <ShoppingBag className="h-5 w-5 text-gray-700" />
-                </div>
-                <h3 className="font-bold text-gray-900 text-lg">Order Summary</h3>
-              </div>
-
-              <div className="divide-y divide-dashed divide-gray-100">
-                <AnimatePresence initial={false}>
-                  {items.map((item) => (
-                    <motion.div
-                      key={item.product.id}
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="py-5 flex items-start gap-4"
-                    >
-                      <div className="w-16 h-16 rounded-lg bg-gray-50 flex-shrink-0 overflow-hidden border border-gray-100">
-                        <img
-                          src={`/${item.product.imageName}`}
-                          alt={item.product.name}
-                          className="w-full h-full object-cover"
-                        />
+            {/* Cart Items Summary */}
+            <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100/50">
+               <h3 className="font-bold text-gray-900 mb-4">Items ({totalItems})</h3>
+               <div className="space-y-4">
+                 {items.map(item => (
+                   <div key={item.product.id} className="flex gap-4">
+                      <img src={item.product.imageUrl} className="w-12 h-12 rounded bg-gray-100 object-cover" />
+                      <div>
+                        <p className="font-semibold text-sm">{item.product.name}</p>
+                        <p className="text-xs text-gray-500">{item.quantity} x {item.product.unit}</p>
                       </div>
-
-                      <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h4 className="font-semibold text-gray-900 text-base">{item.product.name}</h4>
-                            <p className="text-sm text-gray-500">₹{item.product.price} / {item.product.unit}</p>
-                          </div>
-                          
-                          <div className="text-right">
-                             <p className="text-sm font-bold text-gray-900">₹{item.product.price * item.quantity}</p>
-                          </div>
-                        </div>
-
-                        <div className="mt-3 flex justify-between items-center">
-                           <div className="flex items-center bg-white border border-gray-200 rounded-md shadow-sm h-8 w-24 overflow-hidden">
-                              <button
-                                onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                                className="w-8 h-full flex items-center justify-center text-gray-500 hover:bg-gray-50 hover:text-red-500 transition-colors"
-                              >
-                                <Minus className="h-3 w-3" />
-                              </button>
-                              <span className="w-8 text-center text-sm font-bold text-gray-900">{item.quantity}</span>
-                              <button
-                                onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                                className="w-8 h-full flex items-center justify-center text-gray-500 hover:bg-gray-50 hover:text-green-600 transition-colors"
-                              >
-                                <Plus className="h-3 w-3" />
-                              </button>
-                           </div>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              </div>
+                      <div className="ml-auto font-bold text-sm">₹{item.product.price * item.quantity}</div>
+                   </div>
+                 ))}
+               </div>
             </div>
           </div>
 
-          {/* RIGHT COLUMN */}
+          {/* RIGHT COLUMN (Bill) */}
           <div className="lg:col-span-4">
-            <div className="sticky top-24 space-y-4">
-              <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100/50">
-                <div className="flex items-center gap-2 mb-4">
-                   <Receipt className="w-4 h-4 text-gray-400" />
-                   <h3 className="font-bold text-gray-500 text-xs uppercase tracking-widest">Bill Details</h3>
-                </div>
-                
-                <div className="space-y-3">
-                  <div className="flex justify-between text-sm text-gray-600">
-                    <span>Item Total</span>
-                    <span>₹{totalAmount.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm text-gray-600">
-                    <span className="border-b border-dashed border-gray-300 cursor-help">Delivery Fee</span>
-                    <span className="text-green-600 font-medium">FREE</span>
-                  </div>
-                   <div className="flex justify-between text-sm text-gray-600">
-                    <span>Platform Fee</span>
-                    <span>₹5.00</span>
-                  </div>
-                </div>
-
-                <div className="my-4 border-t border-dashed border-gray-200" />
-
-                <div className="flex justify-between items-center">
+            <div className="sticky top-24 bg-white rounded-2xl p-5 shadow-sm border border-gray-100/50 space-y-4">
+               <div className="flex justify-between items-center">
                   <span className="font-bold text-gray-900">To Pay</span>
-                  <span className="font-extrabold text-xl text-gray-900">₹{(totalAmount + 5).toFixed(2)}</span>
-                </div>
-              </div>
-
-              <div className="bg-gray-100 rounded-xl p-3 flex items-start gap-3">
-                 <div className="bg-white p-1 rounded">
-                   <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" className="w-4 h-4" alt="Whatsapp" />
-                 </div>
-                 <div>
-                    <p className="text-xs font-bold text-gray-700">Order via WhatsApp</p>
-                    <p className="text-[10px] text-gray-500 leading-tight">Your order details will be sent directly to our store manager.</p>
-                 </div>
-              </div>
+                  <span className="font-extrabold text-xl text-gray-900">₹{totalAmount.toFixed(2)}</span>
+               </div>
+               
+               <button
+                 onClick={handlePayment}
+                 disabled={isSubmitting}
+                 className={cn(
+                   "w-full bg-[#1c1c1c] text-white font-bold h-12 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-gray-200",
+                   isSubmitting && "bg-gray-400 cursor-not-allowed"
+                 )}
+               >
+                 {isSubmitting ? "Processing..." : (
+                   <>
+                     <ShieldCheck className="w-5 h-5" />
+                     <span>Pay Now</span>
+                   </>
+                 )}
+               </button>
+               
+               <p className="text-[10px] text-gray-400 text-center">
+                 Secured by Razorpay. 100% Safe Payments.
+               </p>
             </div>
           </div>
         </div>
       </div>
-
-      {/* --- FLOATING BOTTOM BAR (Payment) --- */}
-      {/* This will now be visible because the bottom nav is gone */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-4 pb-6 shadow-[0_-5px_20px_rgb(0,0,0,0.05)] z-40 lg:hidden">
-         <div className="flex items-center gap-4">
-             <div className="flex flex-col">
-                <span className="text-xs font-bold text-gray-400 uppercase">Total</span>
-                <span className="text-xl font-extrabold text-gray-900">₹{(totalAmount + 5).toFixed(2)}</span>
-             </div>
-             <button
-  onClick={handleCheckout}
-  disabled={!phone || !address || isSubmitting} // Add isSubmitting here
-  className={cn(
-    "flex-1 bg-[#1c1c1c] text-white font-bold text-lg h-12 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg shadow-gray-200",
-    (!phone || !address || isSubmitting) && "bg-gray-300 text-gray-500 shadow-none cursor-not-allowed"
-  )}
->
-  {isSubmitting ? (
-    <span>Processing...</span>
-  ) : (
-    <>
-      <span>Place Order</span>
-      <ArrowLeft className="w-5 h-5 rotate-180" />
-    </>
-  )}
-</button>
-         </div>
-      </div>
-      
-       {/* Desktop CTA remains same */}
-        <div className="hidden lg:block fixed bottom-10 right-[max(2rem,calc((100vw-64rem)/2))] w-[20rem]">
-        <button
-  onClick={handleCheckout}
-  disabled={!phone || !address || isSubmitting} // Add isSubmitting here
-  className={cn(
-    "flex-1 bg-[#1c1c1c] text-white font-bold text-lg h-12 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg shadow-gray-200",
-    (!phone || !address || isSubmitting) && "bg-gray-300 text-gray-500 shadow-none cursor-not-allowed"
-  )}
->
-  {isSubmitting ? (
-    <span>Processing...</span>
-  ) : (
-    <>
-      <span>Place Order</span>
-      <ArrowLeft className="w-5 h-5 rotate-180" />
-    </>
-  )}
-</button>
-        </div>
-
     </ResponsiveLayout>
   );
 }

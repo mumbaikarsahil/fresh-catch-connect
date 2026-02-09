@@ -27,7 +27,7 @@ export const FloatingCartBar = () => {
               </div>
               <div className="text-left">
                 <p className="text-sm font-medium">₹{totalAmount.toFixed(2)}</p>
-                <p className="text-xs text-muted-foreground">+ ₹30 Delivery fee</p>
+                <p className="text-xs text-muted-foreground">added to cart</p>
               </div>
             </div>
             <Button 

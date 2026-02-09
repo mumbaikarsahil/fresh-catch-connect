@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Minus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Product } from '@/types/product';
+// 1. Change Import to ProductUI
+import { ProductUI } from '@/types/product';
 import { useCart } from '@/context/CartContext';
 import { cn } from '@/lib/utils';
 
 interface ProductCardProps {
-  product: Product;
+  product: ProductUI; // <--- ✅ Fixed Type
   index: number;
 }
 
@@ -17,13 +18,18 @@ export function ProductCard({ product, index }: ProductCardProps) {
   
   const imgRef = useRef<HTMLImageElement>(null);
   const quantity = getItemQuantity(product.id);
-  const isSoldOut = !product.in_stock;
+  
+  // 2. Update Field Access (camelCase)
+  const isSoldOut = !product.inStock; 
+  
+  // 3. Use the pre-calculated URL (No need to manually add '/')
+  const imagePath = product.imageUrl; 
 
-  // Reset loading state
+  // Reset loading state when image changes
   useEffect(() => {
     setImageError(false);
     setIsImageLoading(true);
-  }, [product.imageName]);
+  }, [imagePath]);
 
   // Vercel/Caching Fix
   useEffect(() => {
@@ -32,27 +38,27 @@ export function ProductCard({ product, index }: ProductCardProps) {
     }
   }, []);
 
-  const imagePath = `/${product.imageName}`; 
+  // ✅ NEW: Handle clicking anywhere on the card
+  const handleCardClick = () => {
+    if (!isSoldOut && quantity === 0) {
+      addToCart(product);
+    }
+  };
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05, duration: 0.3 }}
+      onClick={handleCardClick} // ✅ ADDED: Card click handler
       className={cn(
         "group relative bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col h-full",
         "hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300", 
-        // NOTE: We removed 'overflow-hidden' from here to prevent z-index clipping issues if needed,
-        // but we keep rounded-xl to shape the card.
-        isSoldOut && "opacity-75 grayscale"
+        !isSoldOut && quantity === 0 && "cursor-pointer", // ✅ ADDED: Pointer cursor for clickable state
+        isSoldOut && "opacity-75 grayscale cursor-not-allowed"
       )}
     >
-      {/* WRAPPER DIV: This holds the image + the floating button.
-        We need 'relative' here so the button can position itself.
-      */}
       <div className="relative">
-        
-        {/* IMAGE CONTAINER: Has overflow-hidden to clip the zoom effect */}
         <div className="relative aspect-[4/3] overflow-hidden bg-gray-50 rounded-t-xl">
           
           {/* Skeleton */}
@@ -66,7 +72,7 @@ export function ProductCard({ product, index }: ProductCardProps) {
               <motion.img
                 ref={imgRef}
                 key={product.id}
-                src={imagePath}
+                src={imagePath} // ✅ Uses full URL now
                 alt={product.name}
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 loading="lazy"
@@ -86,7 +92,6 @@ export function ProductCard({ product, index }: ProductCardProps) {
             )}
           </AnimatePresence>
 
-          {/* Gradient Overlay */}
           <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/50 to-transparent pointer-events-none" />
           
           {/* Badges */}
@@ -95,28 +100,30 @@ export function ProductCard({ product, index }: ProductCardProps) {
               <span className="bg-gray-900/90 text-white text-[10px] font-bold px-2 py-1 rounded backdrop-blur-md shadow-sm">
                 SOLD OUT
               </span>
-            ) : product.low_stock ? (
-               <span className="bg-amber-500/90 text-white text-[10px] font-bold px-2 py-1 rounded backdrop-blur-md shadow-sm">
-                FEW LEFT
+            ) : product.lowStock ? ( // ✅ camelCase
+                <span className="bg-amber-500/90 text-white text-[10px] font-bold px-2 py-1 rounded backdrop-blur-md shadow-sm">
+                 FEW LEFT
               </span>
             ) : null}
           </div>
         </div>
 
-        {/* THE BUTTON: NOW OUTSIDE THE OVERFLOW-HIDDEN IMAGE CONTAINER 
-           It sits here as a sibling, so it can overlap without being cut off.
-        */}
-        <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 z-30 w-28 h-9 filter drop-shadow-md">
+        {/* THE BUTTON */}
+        {/* ✅ ADDED: e.stopPropagation() prevents the card click from firing when interacting with the buttons */}
+        <div 
+          onClick={(e) => e.stopPropagation()} 
+          className="absolute -bottom-4 left-1/2 -translate-x-1/2 z-30 w-28 h-9 filter drop-shadow-md"
+        >
            {quantity === 0 ? (
              <button
-                onClick={() => addToCart(product)}
-                disabled={isSoldOut}
-                className={cn(
-                  "w-full h-full bg-white text-green-600 font-extrabold text-sm uppercase rounded-lg border border-gray-200 flex items-center justify-center transition-transform active:scale-95 hover:bg-gray-50",
-                  isSoldOut && "bg-gray-200 text-gray-400 cursor-not-allowed border-gray-300"
-                )}
+               onClick={() => addToCart(product)}
+               disabled={isSoldOut}
+               className={cn(
+                 "w-full h-full bg-white text-green-600 font-extrabold text-sm uppercase rounded-lg border border-gray-200 flex items-center justify-center transition-transform active:scale-95 hover:bg-gray-50",
+                 isSoldOut && "bg-gray-200 text-gray-400 cursor-not-allowed border-gray-300"
+               )}
              >
-                ADD
+               ADD
              </button>
            ) : (
              <div className="w-full h-full bg-white text-green-700 rounded-lg border border-green-600 flex items-center justify-between overflow-hidden">

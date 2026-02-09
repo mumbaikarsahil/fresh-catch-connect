@@ -1,44 +1,64 @@
 import { createClient } from '@supabase/supabase-js';
 
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[];
+
 export type Database = {
   public: {
+    Functions: {
+      confirm_order_and_deduct_stock: {
+        Args: { order_id: string; };
+        Returns: void;
+      };
+    };
     Tables: {
       orders: {
         Row: {
-          id: number;
+          id: string; 
           created_at: string;
-          updated_at: string | null;  // <--- Ensure this exists
-          customer_name: string | null;
+          updated_at: string | null;
+          customer_name: string;
           phone_number: string;
-          delivery_address: string;   // <--- Ensure this matches DB
-          items: any;                 // Generic 'any' for JSON
+          delivery_address: string;
+          items: Json; 
           total_amount: number;
-          status: string;
+          status: string; 
           user_id: string | null;
+          payment_id: string | null;
+          payment_status: string;
         };
         Insert: {
-          id?: number;
+          id?: string;
           created_at?: string;
           customer_name: string;
           phone_number: string;
           delivery_address: string;
-          items: any;
+          items: Json;
           total_amount: number;
           status?: 'pending' | 'confirmed' | 'preparing' | 'out_for_delivery' | 'delivered' | 'cancelled';
           user_id?: string | null;
           updated_at?: string;
+          payment_id?: string | null;
+          payment_status?: string;
         };
         Update: {
-          id?: number;
+          id?: string;
           created_at?: string;
           customer_name?: string;
           phone_number?: string;
           delivery_address?: string;
-          items?: any;
+          items?: Json;
           total_amount?: number;
           status?: 'pending' | 'confirmed' | 'preparing' | 'out_for_delivery' | 'delivered' | 'cancelled';
           user_id?: string | null;
           updated_at?: string;
+          payment_id?: string | null;
+          payment_status?: string;
         };
       };
       products: {
@@ -52,6 +72,10 @@ export type Database = {
           in_stock: boolean;
           low_stock: boolean;
           category: string | null;
+          // ✅ THESE WERE MISSING CAUSING YOUR ERROR
+          stock_kg: number; 
+          stock_quantity: number;
+          cleaning_loss_percent: number; 
         };
         Insert: {
           id?: string;
@@ -63,6 +87,9 @@ export type Database = {
           in_stock?: boolean;
           low_stock?: boolean;
           category?: string | null;
+          stock_kg?: number;
+          stock_quantity?: number;
+          cleaning_loss_percent?: number;
         };
         Update: {
           id?: string;
@@ -74,6 +101,9 @@ export type Database = {
           in_stock?: boolean;
           low_stock?: boolean;
           category?: string | null;
+          stock_kg?: number;
+          stock_quantity?: number;
+          cleaning_loss_percent?: number;
         };
       };
     };

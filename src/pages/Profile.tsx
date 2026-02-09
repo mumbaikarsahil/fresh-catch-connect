@@ -1,5 +1,5 @@
 import React from 'react';
-import { Phone, Instagram, MapPin, Clock, Shield } from 'lucide-react';
+import { Phone, Instagram, MapPin, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { ResponsiveLayout } from '@/components/layout/ResponsiveLayout';
 import { CartDrawer } from '@/components/CartDrawer';
@@ -99,17 +99,7 @@ const Profile = () => {
           </motion.div>
         </div>
 
-        {/* Admin Link */}
-        <motion.a
-          href="/admin"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors py-4"
-        >
-          <Shield className="w-4 h-4" />
-          Admin Login
-        </motion.a>
+        {/* Removed the Admin Link section entirely */}
       </div>
 
       <CartDrawer />
