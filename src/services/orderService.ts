@@ -13,13 +13,13 @@ export const createOrder = async (orderData: CreateOrderData): Promise<Order | n
     phone_number: orderData.phone_number,
     customer_name: orderData.customer_name,
     status: orderData.status || 'pending', 
-    // ✅ ADDED: Pass the payment fields if they exist
+    delivery_preference: orderData.delivery_preference, // ✅ ADDED: Pass the delivery preference
     payment_id: orderData.payment_id || null,
     payment_status: orderData.payment_status || 'pending'
   };
 
   // 2. Insert call
-  // ✅ FIX: Cast the supabase query to 'any' to remove the Line 22 red line
+  // Cast the supabase query to 'any' to avoid type errors
   const { data, error } = await (supabase.from('orders') as any)
     .insert(dbPayload)
     .select()
@@ -56,7 +56,7 @@ export const updateOrderStatus = async (
   orderId: string,
   status: OrderStatus
 ): Promise<Order> => {
-  // ✅ FIX: Cast the supabase query to 'any' to remove the Line 62 red line
+  // Cast the supabase query to 'any' to avoid type errors
   const { data, error } = await (supabase.from('orders') as any)
     .update({ status }) 
     .eq('id', orderId)

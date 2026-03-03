@@ -32,6 +32,7 @@ export interface CreateOrderData {
   customer_name: string;
   phone_number: string;
   delivery_address: string;
+  delivery_preference: string;
   total_amount: number;
   status?: OrderStatus; 
   items: {

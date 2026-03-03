@@ -13,6 +13,7 @@ export interface ProductBase {
   stock_quantity: number;      // ✅ Matches DB default 0
   stock_kg: number;            // ✅ Matches DB (Raw Weight)
   cleaning_loss_percent: number; // ✅ Matches DB default 35
+  images?: string[]; // ✅ ADD THIS LINE
 }
 
 // 2. The Database Shape (What Supabase returns)

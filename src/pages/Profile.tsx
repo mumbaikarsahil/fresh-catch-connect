@@ -2,7 +2,6 @@ import React from 'react';
 import { Phone, Instagram, MapPin, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { ResponsiveLayout } from '@/components/layout/ResponsiveLayout';
-import { CartDrawer } from '@/components/CartDrawer';
 import { WHATSAPP_NUMBER } from '@/data/products';
 import logo from '@/assets/logo.jpg';
 
@@ -13,96 +12,114 @@ const Profile = () => {
 
   return (
     <ResponsiveLayout>
-      <div className="p-4 lg:p-0 space-y-6 lg:max-w-2xl lg:mx-auto">
-        {/* Business Card */}
+      <div className="px-4 py-8 lg:py-12 space-y-6 max-w-4xl mx-auto pb-24">
+        
+        {/* Profile Header Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-card rounded-2xl p-6 lg:p-8 text-center shadow-card"
+          className="bg-card rounded-3xl shadow-sm border border-border overflow-hidden"
         >
-          <img
-            src={logo}
-            alt="The Fishy Mart"
-            className="w-24 h-24 lg:w-32 lg:h-32 rounded-full mx-auto mb-4 object-cover border-4 border-primary/20"
-          />
-          <h1 className="text-xl lg:text-2xl font-bold text-card-foreground">The Fishy Mart</h1>
-          <p className="text-primary font-medium text-sm lg:text-base">#FishKhaoOnlyFresh</p>
-          <p className="text-muted-foreground text-sm lg:text-base mt-2">
-            Fresh fish delivery across Mumbai. Quality you can trust.
-          </p>
+          {/* Cover Photo / Gradient Banner */}
+          <div className="h-32 lg:h-48 bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-400" />
+          
+          <div className="px-6 pb-8 lg:pb-10 text-center relative">
+            {/* Profile Avatar */}
+            <img
+              src={logo}
+              alt="The Fishy Mart"
+              className="w-24 h-24 lg:w-32 lg:h-32 rounded-full mx-auto -mt-12 lg:-mt-16 object-cover border-4 border-background shadow-md bg-white"
+            />
+            
+            <h1 className="text-2xl lg:text-3xl font-extrabold text-foreground mt-4 tracking-tight">
+              The Fishy Mart
+            </h1>
+            
+            <div className="mt-2.5">
+              <span className="inline-block px-4 py-1.5 bg-primary/10 text-primary text-xs lg:text-sm font-bold uppercase tracking-wider rounded-full">
+                #FishKhaoOnlyFresh
+              </span>
+            </div>
+            
+            <p className="text-muted-foreground text-sm lg:text-base mt-4 max-w-lg mx-auto">
+              Fresh fish delivery across Mumbai. Quality you can trust, right to your doorstep.
+            </p>
+          </div>
         </motion.div>
 
-        {/* Info Cards */}
-        <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
+        {/* Info & Action Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
+          
+          {/* Contact Card */}
           <motion.button
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
             onClick={contactWhatsApp}
-            className="w-full flex items-center gap-4 bg-card rounded-xl p-4 shadow-card hover:shadow-card-hover transition-shadow"
+            className="w-full group flex items-center gap-4 bg-card rounded-2xl p-5 border border-border shadow-sm hover:shadow-md hover:border-whatsapp/30 transition-all duration-300"
           >
-            <div className="w-10 h-10 rounded-full bg-whatsapp/10 flex items-center justify-center">
-              <Phone className="w-5 h-5 text-whatsapp" />
+            <div className="w-12 h-12 rounded-full bg-whatsapp/10 flex items-center justify-center group-hover:bg-whatsapp group-hover:scale-110 transition-all duration-300">
+              <Phone className="w-6 h-6 text-whatsapp group-hover:text-white transition-colors duration-300" />
             </div>
-            <div className="text-left">
-              <p className="font-medium text-card-foreground">Contact Us</p>
-              <p className="text-sm text-muted-foreground">+91 9082165743</p>
+            <div className="text-left flex-1">
+              <p className="font-semibold text-foreground text-base">Contact Us</p>
+              <p className="text-sm text-muted-foreground mt-0.5">+91 {WHATSAPP_NUMBER}</p>
             </div>
           </motion.button>
 
+          {/* Instagram Card */}
           <motion.a
             href="https://instagram.com/thefishymart"
             target="_blank"
             rel="noopener noreferrer"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
-            className="w-full flex items-center gap-4 bg-card rounded-xl p-4 shadow-card hover:shadow-card-hover transition-shadow"
+            className="w-full group flex items-center gap-4 bg-card rounded-2xl p-5 border border-border shadow-sm hover:shadow-md hover:border-pink-500/30 transition-all duration-300"
           >
-            <div className="w-10 h-10 rounded-full bg-pink-500/10 flex items-center justify-center">
-              <Instagram className="w-5 h-5 text-pink-500" />
+            <div className="w-12 h-12 rounded-full bg-pink-500/10 flex items-center justify-center group-hover:bg-gradient-to-tr group-hover:from-yellow-400 group-hover:via-pink-500 group-hover:to-purple-500 group-hover:scale-110 transition-all duration-300">
+              <Instagram className="w-6 h-6 text-pink-500 group-hover:text-white transition-colors duration-300" />
             </div>
-            <div className="text-left">
-              <p className="font-medium text-card-foreground">Follow Us</p>
-              <p className="text-sm text-muted-foreground">@thefishymart</p>
+            <div className="text-left flex-1">
+              <p className="font-semibold text-foreground text-base">Follow Us</p>
+              <p className="text-sm text-muted-foreground mt-0.5">@thefishymart</p>
             </div>
           </motion.a>
 
+          {/* Delivery Area Card */}
           <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="flex items-center gap-4 bg-card rounded-xl p-4 shadow-card"
+            className="flex items-center gap-4 bg-card rounded-2xl p-5 border border-border shadow-sm"
           >
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <MapPin className="w-5 h-5 text-primary" />
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+              <MapPin className="w-6 h-6 text-primary" />
             </div>
-            <div className="text-left">
-              <p className="font-medium text-card-foreground">Delivery Area</p>
-              <p className="text-sm text-muted-foreground">All over Mumbai</p>
+            <div className="text-left flex-1">
+              <p className="font-semibold text-foreground text-base">Delivery Area</p>
+              <p className="text-sm text-muted-foreground mt-0.5">All over Mumbai</p>
             </div>
           </motion.div>
 
+          {/* Delivery Time Card */}
           <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.25 }}
-            className="flex items-center gap-4 bg-card rounded-xl p-4 shadow-card"
+            className="flex items-center gap-4 bg-card rounded-2xl p-5 border border-border shadow-sm"
           >
-            <div className="w-10 h-10 rounded-full bg-accent/30 flex items-center justify-center">
-              <Clock className="w-5 h-5 text-accent-foreground" />
+            <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center">
+              <Clock className="w-6 h-6 text-blue-500" />
             </div>
-            <div className="text-left">
-              <p className="font-medium text-card-foreground">Delivery Time</p>
-              <p className="text-sm text-muted-foreground">Same day, before 2 PM</p>
+            <div className="text-left flex-1">
+              <p className="font-semibold text-foreground text-base">Delivery Time</p>
+              <p className="text-sm text-muted-foreground mt-0.5">Same day, before 2 PM</p>
             </div>
           </motion.div>
+          
         </div>
-
-        {/* Removed the Admin Link section entirely */}
       </div>
-
-      <CartDrawer />
     </ResponsiveLayout>
   );
 };

@@ -10,7 +10,7 @@ import { FloatingCartBar } from '../FloatingCartBar';
 interface ResponsiveLayoutProps {
   children: React.ReactNode;
   showBottomNav?: boolean;
-  hideFloatingCart?: boolean; // New prop
+  hideFloatingCart?: boolean;
 }
 
 interface NavItemProps {
@@ -74,16 +74,21 @@ export function ResponsiveLayout({
 }: ResponsiveLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { totalItems, setIsCartOpen } = useCart();
+  const { setIsCartOpen } = useCart();
+
+  // ✅ ADDED: Check if we are currently on the profile page
+  const isProfilePage = location.pathname === '/profile';
+  
+  // ✅ ADDED: Combine the manual prop with the automatic route check
+  const shouldHideCart = hideFloatingCart || isProfilePage;
 
   const navItems = [
     { icon: <Home className="w-5 h-5" />, label: 'Home', path: '/' },
     { icon: <Search className="w-5 h-5" />, label: 'Search', path: '/search' },
-    { icon: <User className="w-5 h-5" />, label: 'Profile', path: '/profile' },
+    { icon: <User className="w-5 h-5" />, label: 'More', path: '/profile' },
   ];
 
   const handleNavClick = (path: string) => {
-    // If you want special handling for cart in nav, keep it, otherwise just navigate
     if (path === '/cart') {
       setIsCartOpen(true);
     } else {
@@ -112,15 +117,14 @@ export function ResponsiveLayout({
             '--safe-area-bottom': 'env(safe-area-inset-bottom)'
           } as React.CSSProperties}
         >
-          {/* We remove max-w constraints here to let children control full width (like hero banners) */}
           {children}
         </main>
 
         {/* --- Mobile Bottom Navigation Elements --- */}
         {showBottomNav && (
           <>
-            {/* 1. Floating Cart Bar (Conditional) */}
-            {!hideFloatingCart && <FloatingCartBar />}
+            {/* 1. Floating Cart Bar (Now properly hides on Profile) */}
+            {!shouldHideCart && <FloatingCartBar />}
 
             {/* 2. Bottom Tab Bar */}
             <nav

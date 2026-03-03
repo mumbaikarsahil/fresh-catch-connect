@@ -1,51 +1,42 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles } from 'lucide-react';
 
 export function HeroBanner() {
+  // 1. Replace these with your actual Supabase public storage URLs
+  const bannerVersion = "holi-update";
+  const desktopImageUrl = "https://tnwmnsdfdjbeifqssxuu.supabase.co/storage/v1/object/public/banners/hero-desktop.jpg";
+  const mobileImageUrl = "https://tnwmnsdfdjbeifqssxuu.supabase.co/storage/v1/object/public/banners/hero-mobile.jpg";
+
+  // 2. Cache Buster
+  // Browsers cache images. If you overwrite the image in Supabase, users might still see the old one.
+  // Appending today's date forces the browser to fetch the new image once a day, 
+  // without wasting your Supabase bandwidth on every single page load.
+  const today = new Date().toISOString().split('T')[0];
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="mx-4 lg:mx-0 mt-4 lg:mt-0 rounded-2xl lg:rounded-3xl bg-primary-gradient p-5 lg:p-8 text-primary-foreground overflow-hidden relative"
+      className="mx-4 lg:mx-0 mt-4 lg:mt-0 rounded-2xl lg:rounded-3xl overflow-hidden relative shadow-lg"
     >
-      {/* Background decoration */}
-      <div className="absolute inset-0 opacity-20">
-        <div className="absolute -right-8 -top-8 w-32 h-32 lg:w-48 lg:h-48 bg-white/30 rounded-full blur-2xl" />
-        <div className="absolute -left-4 -bottom-4 w-24 h-24 lg:w-36 lg:h-36 bg-white/20 rounded-full blur-xl" />
-      </div>
-
-      {/* --- HUMAN MODEL IMAGE ADDED HERE --- */}
-      {/* Positioned bottom-right, scaled to look like they are standing inside the banner */}
-      <div className="absolute bottom-0 right-0 h-[110%] w-1/2 lg:w-5/12 z-0 pointer-events-none flex items-end justify-end">
-        <img 
-          src="/model.png" /* Replace 'human-model.png' with your actual filename */
-          alt="Delivery partner"
-          className="h-full w-auto object-contain object-bottom drop-shadow-2xl"
+      {/* The <picture> tag is the secret sauce here. 
+        It natively handles serving the desktop image to laptops 
+        and the mobile image to phones without needing React state.
+      */}
+      <picture>
+        {/* Desktop Image (Shows on screens 1024px and wider) */}
+        <source 
+          media="(min-width: 1024px)" 
+          srcSet={`${desktopImageUrl}?v=${today}`} 
         />
-      </div>
-
-      {/* Content Container (z-10 ensures text stays above the image if they overlap) */}
-      <div className="relative z-10 lg:w-2/3">
-        <div className="flex items-center gap-1.5 mb-2">
-          <Sparkles className="w-4 h-4 lg:w-5 lg:h-5" />
-          <span className="text-xs lg:text-sm font-medium uppercase tracking-wider opacity-90">
-            Fresh Not Frozen
-          </span>
-        </div>
         
-        <h2 className="text-xl lg:text-3xl font-bold mb-1">
-          Today's Fresh Catch
-        </h2>
-        
-        <p className="text-sm lg:text-base opacity-90 mb-4 lg:mb-6 max-w-xs lg:max-w-sm">
-          Fresh fish at your doorstep
-        </p>
-
-        <div className="inline-flex items-center gap-2 bg-accent text-accent-foreground px-4 py-2 lg:px-6 lg:py-3 rounded-full text-sm lg:text-base font-semibold shadow-lg">
-          🐟 Free delivery above ₹500
-        </div>
-      </div>
+        {/* Mobile Image (Default fallback for smaller screens) */}
+        <img 
+          src={`${mobileImageUrl}?v=${today}`}
+          alt="Fresh Catch Special Offer"
+          className="w-full h-[250px] lg:h-[400px] object-cover object-center"
+        />
+      </picture>
     </motion.div>
   );
 }
