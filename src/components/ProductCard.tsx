@@ -6,8 +6,8 @@ import { useCart } from '@/context/CartContext';
 import { cn } from '@/lib/utils';
 
 // IMPORTANT: Replace [YOUR_PROJECT_ID] with your actual Supabase project ID!
-const BUCKET_URL = "https://tnwmnsdfdjbeifqssxuu.supabase.co/storage/v1/object/public/products/";
-
+// In ProductCard.tsx, change the BUCKET_URL to this:
+const BUCKET_URL = "/supabase-proxy/storage/v1/object/public/products/";
 interface ProductCardProps {
   product: ProductUI;
   index: number;

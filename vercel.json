@@ -1,6 +1,13 @@
 {
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    { 
+      "source": "/supabase-proxy/:match*", 
+      "destination": "https://tnwmnsdfdjbeifqssxuu.supabase.co/:match*" 
+    },
+    { 
+      "source": "/(.*)", 
+      "destination": "/index.html" 
+    }
   ],
   "headers": [
     {
