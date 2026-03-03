@@ -7,7 +7,8 @@ import { cn } from '@/lib/utils';
 
 // IMPORTANT: Replace [YOUR_PROJECT_ID] with your actual Supabase project ID!
 // In ProductCard.tsx, change the BUCKET_URL to this:
-const BUCKET_URL = "/supabase-proxy/storage/v1/object/public/products/";
+// Replace the BUCKET_URL line with this:
+const BUCKET_URL = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/products/`;
 interface ProductCardProps {
   product: ProductUI;
   index: number;

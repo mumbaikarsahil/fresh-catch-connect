@@ -110,23 +110,11 @@ export type Database = {
   };
 };
 
-// Notice we use 'let' instead of 'const' here so we can modify it
-let supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables');
 }
 
-// 1. Clean up any accidental quotes or spaces from the .env file
-supabaseUrl = supabaseUrl.replace(/['"]/g, '').trim();
-
-// 2. If it is NOT a full web link (meaning it's our proxy), build the full URL
-if (!supabaseUrl.startsWith('http')) {
-  // Make sure it has a leading slash even if you forgot it in the .env
-  const safePath = supabaseUrl.startsWith('/') ? supabaseUrl : `/${supabaseUrl}`;
-  supabaseUrl = `${window.location.origin}${safePath}`;
-}
-
-// 3. Initialize Supabase safely
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
