@@ -1,8 +1,8 @@
 {
   "rewrites": [
     { 
-      "source": "/supabase-proxy/:match*", 
-      "destination": "https://tnwmnsdfdjbeifqssxuu.supabase.co/:match*" 
+      "source": "/supabase-proxy/(.*)", 
+      "destination": "https://tnwmnsdfdjbeifqssxuu.supabase.co/$1" 
     },
     { 
       "source": "/(.*)", 
