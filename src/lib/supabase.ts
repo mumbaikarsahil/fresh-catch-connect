@@ -110,11 +110,16 @@ export type Database = {
   };
 };
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+let supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables');
+}
+
+// ✅ NEW: If the URL is just "/supabase-proxy", attach the full website domain to it
+if (supabaseUrl.startsWith('/')) {
+  supabaseUrl = `${window.location.origin}${supabaseUrl}`;
 }
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
