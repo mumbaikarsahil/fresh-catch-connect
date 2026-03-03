@@ -110,6 +110,7 @@ export type Database = {
   };
 };
 
+// Notice we use 'let' instead of 'const' here so we can modify it
 let supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
@@ -117,7 +118,8 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables');
 }
 
-// ✅ NEW: If the URL is just "/supabase-proxy", attach the full website domain to it
+// ✅ THE MAGIC FIX: This attaches 'http://localhost:5173' or 'https://yourdomain.com'
+// to the front of '/supabase-proxy' so Supabase accepts it as a valid URL.
 if (supabaseUrl.startsWith('/')) {
   supabaseUrl = `${window.location.origin}${supabaseUrl}`;
 }
