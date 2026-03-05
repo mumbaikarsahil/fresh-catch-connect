@@ -2,12 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
-/* The Fishy Mart Design System - Ocean Fresh Theme */
+/* The Fishy Mart Design System - Deep Blue Theme */
 
 @layer base {
   :root {
-    /* Core Brand Colors - Ocean Cyan + Navy + Gold */
-    --background: 195 100% 98%;
+    /* Core Brand Colors */
+    --background: 208 100% 98%;
     --foreground: 230 25% 18%;
 
     --card: 0 0% 100%;
@@ -16,8 +16,8 @@
     --popover: 0 0% 100%;
     --popover-foreground: 230 25% 18%;
 
-    /* Primary - Ocean Cyan */
-    --primary: 195 100% 43%;
+    /* ✅ CHANGED: Primary - Brand Blue (#0583f2) */
+    --primary: 208 96% 48%;
     --primary-foreground: 0 0% 100%;
 
     /* Secondary - Deep Navy */
@@ -37,7 +37,8 @@
 
     --border: 210 20% 90%;
     --input: 210 20% 90%;
-    --ring: 195 100% 43%;
+    /* ✅ CHANGED: Focus rings now use Brand Blue */
+    --ring: 208 96% 48%;
 
     --radius: 1rem;
 
@@ -47,16 +48,16 @@
     --warning: 38 92% 50%;
     --warning-foreground: 230 25% 18%;
 
-    /* Gradients */
-    --gradient-ocean: linear-gradient(135deg, hsl(195 100% 95%) 0%, hsl(330 100% 97%) 100%);
-    --gradient-primary: linear-gradient(135deg, hsl(195 100% 43%) 0%, hsl(200 100% 35%) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(195 30% 98%) 100%);
+    /* ✅ CHANGED: Gradients updated to match Brand Blue */
+    --gradient-ocean: linear-gradient(135deg, hsl(208 100% 95%) 0%, hsl(330 100% 97%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(208 96% 48%) 0%, hsl(208 100% 35%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(208 30% 98%) 100%);
 
-    /* Shadows */
+    /* ✅ CHANGED: Shadows updated to glow with Brand Blue */
     --shadow-sm: 0 2px 8px -2px hsl(230 25% 18% / 0.08);
     --shadow-md: 0 8px 24px -4px hsl(230 25% 18% / 0.12);
     --shadow-lg: 0 16px 48px -8px hsl(230 25% 18% / 0.15);
-    --shadow-glow: 0 0 24px -4px hsl(195 100% 43% / 0.4);
+    --shadow-glow: 0 0 24px -4px hsl(208 96% 48% / 0.4);
 
     /* Safe Area Insets for iOS */
     --safe-area-top: env(safe-area-inset-top, 0px);
@@ -89,10 +90,11 @@
     --popover: 230 25% 14%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 195 100% 50%;
+    /* ✅ CHANGED: Dark mode Brand Blue */
+    --primary: 208 96% 48%;
     --primary-foreground: 230 25% 10%;
 
-    --secondary: 195 30% 20%;
+    --secondary: 208 30% 20%;
     --secondary-foreground: 210 40% 98%;
 
     --muted: 230 20% 20%;
@@ -106,7 +108,8 @@
 
     --border: 230 20% 22%;
     --input: 230 20% 22%;
-    --ring: 195 100% 50%;
+    /* ✅ CHANGED: Dark mode focus rings */
+    --ring: 208 96% 48%;
 
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;

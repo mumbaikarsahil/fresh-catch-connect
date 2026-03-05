@@ -22,7 +22,8 @@ export interface Product extends ProductBase {
   created_at?: string;
   updated_at?: string;
   in_stock: boolean;     // DB column is in_stock
-  low_stock: boolean;    // DB column is low_stock
+  low_stock: boolean; 
+  is_deleted:boolean;   // DB column is low_stock
 }
 
 // 3. The Frontend Shape (What your React components use)

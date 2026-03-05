@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, Phone, ShieldCheck, User, Clock, CheckCircle2, Edit2 } from 'lucide-react';
+import { ArrowLeft, MapPin, Phone, ShieldCheck, User, Clock, CheckCircle2, Edit2, Plus, Minus } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { CreateOrderData } from '@/types/order';
 import { Input } from '@/components/ui/input';
@@ -17,7 +17,8 @@ declare global {
 
 export default function CartPage() {
   const navigate = useNavigate();
-  const { items, totalAmount, totalItems, clearCart } = useCart();
+  // ✅ ADDED: Pulled in updateQuantity and removeFromCart from your context
+  const { items, totalAmount, totalItems, clearCart, updateQuantity, removeFromCart } = useCart();
   
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
@@ -25,25 +26,27 @@ export default function CartPage() {
   const [deliveryOption, setDeliveryOption] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
-  
-  // NEW: UI State for collapsible sections
   const [isDetailsSaved, setIsDetailsSaved] = useState(false);
+
+  // ✅ ADDED: Auto-redirect to home if the cart becomes empty
+  useEffect(() => {
+    if (items.length === 0) {
+      navigate('/');
+    }
+  }, [items.length, navigate]);
 
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
-  // --- NEW: DYNAMIC DELIVERY OPTIONS LOGIC ---
   const availableDeliveryOptions = useMemo(() => {
     const d = new Date();
     const currentHour = d.getHours();
     
-    // Helper to calculate exact time 2 hours from now
     const getTwoHoursFromNow = () => {
       const futureDate = new Date();
       futureDate.setHours(futureDate.getHours() + 2);
       return futureDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
     };
 
-    // A. Morning: 6 AM to 11:59 AM
     if (currentHour >= 6 && currentHour < 12) {
       return [
         { id: 'same_day_2hr', label: `Today, by ${getTwoHoursFromNow()}` },
@@ -53,14 +56,12 @@ export default function CartPage() {
         { id: 'next_day_evening', label: 'Tomorrow, 5:00 PM - 8:00 PM' }
       ];
     } 
-    // B. Afternoon: 12 PM to 3:59 PM
     else if (currentHour >= 12 && currentHour < 16) {
       return [
         { id: 'same_day_evening_6_7', label: 'Today, 6:00 PM - 7:00 PM' },
         { id: 'next_day_morning_8_9', label: 'Tomorrow, 8:00 AM - 9:00 AM' }
       ];
     } 
-    // C. Evening: 4 PM to 7:59 PM
     else if (currentHour >= 16 && currentHour < 20) {
       return [
         { id: 'same_day_2hr', label: `Today, by ${getTwoHoursFromNow()}` },
@@ -69,9 +70,7 @@ export default function CartPage() {
         { id: 'next_day_evening', label: 'Tomorrow, 5:00 PM - 8:00 PM' }
       ];
     } 
-    // D. Night/Late Night: 8 PM to 5:59 AM
     else {
-      // If it's past midnight but before 6 AM, "Tomorrow" technically means "Today"
       const dayLabel = currentHour < 6 ? 'Today' : 'Tomorrow';
       return [
         { id: 'next_day_morning', label: `${dayLabel}, 8:00 AM - 10:00 AM` },
@@ -87,8 +86,6 @@ export default function CartPage() {
     }
   }, [availableDeliveryOptions, deliveryOption]);
 
-  // --- Auto-Fetch Logic ---
-  // --- Auto-Fetch Logic ---
   const fetchCustomerData = useCallback(async (phoneNumber: string) => {
     setIsLoadingDetails(true);
     try {
@@ -103,7 +100,6 @@ export default function CartPage() {
       if (error && error.code !== 'PGRST116') throw error;
 
       if (data) {
-        // ✅ Tell TypeScript EXACTLY what properties to expect
         const customer = data as { customer_name: string; delivery_address: string };
         setCustomerName(customer.customer_name);
         setAddress(customer.delivery_address);
@@ -129,7 +125,6 @@ export default function CartPage() {
     setIsDetailsSaved(true);
   };
 
-  // --- PAYMENT LOGIC ---
   const handlePayment = async () => {
     if (!isDetailsSaved || !deliveryOption) {
       alert("Please save delivery details and select a delivery time.");
@@ -204,15 +199,13 @@ export default function CartPage() {
     }
   };
 
-  if (items.length === 0) {
-    return <div className="p-10 text-center">Cart is Empty</div>;
-  }
+  // ✅ Prevent rendering if the redirect hasn't kicked in yet
+  if (items.length === 0) return null;
 
   return (
     <ResponsiveLayout hideFloatingCart={true} showBottomNav={false}>
       <div className="min-h-screen bg-[#f4f5f7] pb-32 md:pb-10">
         
-        {/* Header */}
         <div className="sticky top-0 z-30 bg-white border-b border-gray-100 shadow-sm px-4 py-4">
           <div className="max-w-5xl mx-auto flex items-center gap-4">
             <button onClick={() => navigate(-1)} className="p-2 hover:bg-gray-100 rounded-full">
@@ -224,12 +217,9 @@ export default function CartPage() {
 
         <div className="max-w-5xl mx-auto px-4 py-6 md:py-8 grid grid-cols-1 lg:grid-cols-12 gap-6">
           
-          {/* LEFT COLUMN */}
           <div className="lg:col-span-8 space-y-6">
             
-            {/* STEP 1: Delivery Details (Collapsible Zomato Style) */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100/50 overflow-hidden">
-              {/* Collapsed State Summary */}
               {isDetailsSaved ? (
                 <div className="p-5 flex items-start justify-between bg-green-50/30">
                   <div className="flex gap-4">
@@ -248,7 +238,6 @@ export default function CartPage() {
                   </button>
                 </div>
               ) : (
-                /* Expanded State Form */
                 <div className="p-5 md:p-6 space-y-5">
                   <div className="flex items-center gap-3">
                      <MapPin className="h-5 w-5 text-gray-700" />
@@ -295,7 +284,6 @@ export default function CartPage() {
               )}
             </div>
 
-            {/* STEP 2: Delivery Time Selection (Disabled until Step 1 is saved) */}
             <div className={cn(
               "bg-white rounded-2xl p-5 md:p-6 shadow-sm border border-gray-100/50 space-y-4 transition-all duration-300",
               !isDetailsSaved && "opacity-50 pointer-events-none grayscale-[0.2]"
@@ -335,25 +323,52 @@ export default function CartPage() {
               </div>
             </div>
 
-            {/* Cart Items Summary */}
+            {/* ✅ UPDATED: Cart Items Summary with Quantity Controls */}
             <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100/50">
                <h3 className="font-bold text-gray-900 mb-4">Items ({totalItems})</h3>
-               <div className="space-y-4">
+               <div className="space-y-4 divide-y divide-gray-100">
                  {items.map(item => (
-                   <div key={item.product.id} className="flex gap-4">
-                      <img src={item.product.imageUrl} className="w-12 h-12 rounded bg-gray-100 object-cover" />
-                      <div>
-                        <p className="font-semibold text-sm">{item.product.name}</p>
-                        <p className="text-xs text-gray-500">{item.quantity} x {item.product.unit}</p>
+                   <div key={item.product.id} className="flex gap-4 pt-4 first:pt-0">
+                      <img src={item.product.imageUrl} className="w-16 h-16 rounded-xl bg-gray-100 object-cover" />
+                      <div className="flex-1 flex flex-col justify-between py-1">
+                        <div>
+                          <p className="font-semibold text-sm text-gray-900">{item.product.name}</p>
+                          <p className="text-xs text-gray-500">₹{item.product.price} / {item.product.unit}</p>
+                        </div>
+                        
+                        {/* New Plus / Minus Control Block */}
+                        <div className="flex items-center mt-2">
+                          <div className="flex items-center border border-gray-200 rounded-lg bg-white h-8">
+                            <button 
+                              onClick={() => {
+                                if (item.quantity <= 1) removeFromCart(item.product.id);
+                                else updateQuantity(item.product.id, item.quantity - 1);
+                              }}
+                              className="w-8 h-full flex items-center justify-center text-red-500 hover:bg-red-50 rounded-l-lg transition-colors"
+                            >
+                              <Minus className="w-3 h-3" />
+                            </button>
+                            <span className="w-8 text-center text-sm font-bold text-gray-900">
+                              {item.quantity}
+                            </span>
+                            <button 
+                              onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                              className="w-8 h-full flex items-center justify-center text-green-600 hover:bg-green-50 rounded-r-lg transition-colors"
+                            >
+                              <Plus className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
                       </div>
-                      <div className="ml-auto font-bold text-sm">₹{item.product.price * item.quantity}</div>
+                      <div className="font-bold text-sm text-gray-900 py-1">
+                        ₹{item.product.price * item.quantity}
+                      </div>
                    </div>
                  ))}
                </div>
             </div>
           </div>
 
-          {/* RIGHT COLUMN (Bill) */}
           <div className="lg:col-span-4">
             <div className="sticky top-24 bg-white rounded-2xl p-5 shadow-sm border border-gray-100/50 space-y-4">
                <div className="flex justify-between items-center">
