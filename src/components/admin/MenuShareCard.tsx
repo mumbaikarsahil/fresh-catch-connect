@@ -29,7 +29,7 @@ export function MenuShareCard({ products }: { products: Product[] }) {
 🐟 *Available Today:*
 ${activeMenu.map(p => `• ${p.name}${showPrices ? ` - ₹${p.price}/${p.unit}` : ''}`).join('\n')}
 
-🛒 *Order Now:* https://thefishymart.in
+🛒 *Order Now:* https://fishymart.in
 🚚 Delivered fresh and cleaned right to your doorstep!
 `.trim();
 
@@ -287,7 +287,7 @@ ${activeMenu.map(p => `• ${p.name}${showPrices ? ` - ₹${p.price}/${p.unit}` 
               {/* Footer */}
               <div className="mt-auto bg-gray-900 text-white rounded-[2.5rem] p-[40px] text-center flex flex-col justify-center gap-[12px] shadow-xl shrink-0 h-[180px] box-border">
                 <p className="text-[40px] font-bold" style={{ lineHeight: '1.2' }}>
-                  Order at: <span className="text-[#0583f2]">www.thefishymart.in</span>
+                  Order at: <span className="text-[#0583f2]">www.fishymart.in</span>
                 </p>
                 <p className="text-[26px] font-medium text-gray-400" style={{ lineHeight: '1.2' }}>
                   📍 Freshly Cleaned & Delivered Home
