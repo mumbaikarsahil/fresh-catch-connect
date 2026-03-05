@@ -32,7 +32,7 @@ const Index = () => {
         
         setProducts(activeProducts);
       } catch (err) {
-        console.error('Error fetching products:', err);
+        
         setError('Unable to load the menu.');
       } finally {
         setLoading(false);

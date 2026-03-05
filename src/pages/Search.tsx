@@ -25,7 +25,7 @@ const Search = () => {
         const data = await getProducts();
         setProducts(data); // Line 21 is now happy!
       } catch (err) {
-        console.error('Error fetching products:', err);
+    
         setError('Failed to load products. Please try again later.');
       } finally {
         setLoading(false);

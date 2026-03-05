@@ -105,7 +105,6 @@ export default function CartPage() {
         setAddress(customer.delivery_address);
       }
     } catch (err) {
-      console.error('Error fetching customer data:', err);
     } finally {
       setIsLoadingDetails(false);
     }
@@ -193,7 +192,6 @@ export default function CartPage() {
       rzp1.open();
 
     } catch (err) {
-      console.error('Error:', err);
       alert('Something went wrong. Please try again.');
       setIsSubmitting(false);
     }
