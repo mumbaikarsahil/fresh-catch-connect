@@ -63,7 +63,7 @@ const Profile = () => {
             </div>
             <div className="text-left flex-1">
               <p className="font-semibold text-foreground text-base">Contact Us</p>
-              <p className="text-sm text-muted-foreground mt-0.5">+91 {WHATSAPP_NUMBER}</p>
+              <p className="text-sm text-muted-foreground mt-0.5">+{WHATSAPP_NUMBER}</p>
             </div>
           </motion.button>
 

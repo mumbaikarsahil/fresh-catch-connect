@@ -15,9 +15,10 @@ const localProducts: Product[] = [
     low_stock: false,
     stock_kg: 5,
     stock_quantity: 10,
-    cleaning_loss_percent: 35 
+    cleaning_loss_percent: 35 ,
+    is_deleted: false,
   },
-  // ... other products
+
 ];
 
 // Helper: Transforms DB Data -> Frontend Data (Local Assets)

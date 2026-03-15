@@ -1,22 +1,19 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
-// This allows your frontend (Vite) to talk to this backend function securely
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
 serve(async (req) => {
-  // 1. Handle CORS preflight request
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
 
   try {
-    // Get the amount sent from your CartPage
-    const { amount } = await req.json();
+    // ✅ CHANGED: Extract supabaseOrderId from the request
+    const { amount, supabaseOrderId } = await req.json();
 
-    // 2. Get your Secret Keys from Supabase Vault (We will set this up next)
     const key = Deno.env.get('RAZORPAY_KEY_ID');
     const secret = Deno.env.get('RAZORPAY_KEY_SECRET');
 
@@ -24,14 +21,16 @@ serve(async (req) => {
       throw new Error("Missing Razorpay Keys");
     }
 
-    // Convert amount to paise (e.g., ₹500 = 50000 paise)
+    // ✅ CHANGED: Add receipt and notes to the Razorpay payload
     const orderData = {
       amount: Math.round(amount * 100),
       currency: "INR",
-      receipt: `order_${Date.now()}`,
+      receipt: supabaseOrderId, // Max 40 chars, Supabase UUID fits perfectly
+      notes: {
+        supabase_order_id: supabaseOrderId // This gets sent back in the webhook!
+      }
     };
 
-    // 3. Talk to Razorpay securely using Basic Auth
     const basicAuth = btoa(`${key}:${secret}`);
     const razorpayRes = await fetch('https://api.razorpay.com/v1/orders', {
       method: 'POST',
@@ -43,12 +42,8 @@ serve(async (req) => {
     });
 
     const razorpayOrder = await razorpayRes.json();
+    if (razorpayOrder.error) throw new Error(razorpayOrder.error.description);
 
-    if (razorpayOrder.error) {
-      throw new Error(razorpayOrder.error.description);
-    }
-
-    // 4. Return the Secure Order ID back to your CartPage
     return new Response(JSON.stringify(razorpayOrder), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,

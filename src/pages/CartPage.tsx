@@ -154,8 +154,12 @@ export default function CartPage() {
       const newOrder = await createOrder(orderData);
       if (!newOrder) throw new Error("Failed to initialize order");
 
+      // ✅ CHANGED: Pass the newOrder.id to the Edge Function
       const { data: razorpayOrder, error: funcError } = await supabase.functions.invoke('create-order', {
-        body: { amount: totalAmount }
+        body: { 
+          amount: totalAmount,
+          supabaseOrderId: newOrder.id // Passing the ID here
+        }
       });
 
       if (funcError) throw new Error("Backend error: " + funcError.message);
@@ -176,8 +180,7 @@ export default function CartPage() {
           }).eq('id', newOrder.id);
 
           clearCart();
-          alert(`Payment Successful! Order #${newOrder.id.slice(0,6)} placed.`);
-          navigate('/');
+          navigate('/order-success', { state: { orderId: newOrder.id } });
         },
         prefill: { name: customerName, contact: phone },
         theme: { color: "#1c1c1c" },

@@ -1,6 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MenuShareCard } from '@/components/admin/MenuShareCard';
+import { AdminLogin } from '@/components/admin/AdminLogin';
+import { AnalyticsDashboard } from '@/components/admin/AnalyticsDashboard';
+import { OrderCard } from '@/components/admin/OrderCard';
+
 import {
   Fish,
   ShoppingBag,
@@ -40,160 +44,11 @@ const slugify = (text: string) => {
 const BUCKET_URL = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/products/`;
 const getFullImageUrl = (path: string) => path?.startsWith('http') ? path : `${BUCKET_URL}${path}`;
 
-// --- COMPONENTS ---
 
-function StatCard({ icon: Icon, label, value, color }: { icon: React.ElementType; label: string; value: string; color: string }) {
-  return (
-    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-xl p-4 shadow-card border border-border">
-      <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center mb-2', color)}>
-        <Icon className="w-5 h-5" />
-      </div>
-      <p className="text-lg font-bold text-card-foreground">{value}</p>
-      <p className="text-xs text-muted-foreground">{label}</p>
-    </motion.div>
-  );
-}
-
-// --- ORDER CARD ---
-function OrderCard({ 
-  order, 
-  onConfirm, 
-  onDispatch, 
-  onComplete, 
-  onFollowUp 
-}: { 
-  order: Order; 
-  onConfirm: (o: Order) => void; 
-  onDispatch: (o: Order) => void;
-  onComplete: (o: Order) => void;
-  onFollowUp: (o: Order) => void; 
-}) {
-  const items = (order.items || []) as OrderItem[];
-
-  const getStatusColor = (status: string) => {
-    switch(status) {
-      case 'confirmed': return 'bg-blue-100 text-blue-700';
-      case 'out_for_delivery': return 'bg-yellow-100 text-yellow-800';
-      case 'delivered': return 'bg-green-100 text-green-700';
-      default: return 'bg-gray-100 text-gray-600';
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch(status) {
-      case 'confirmed': return 'Kitchen Ready';
-      case 'out_for_delivery': return 'On the Way';
-      case 'delivered': return 'Delivered';
-      default: return 'Pending';
-    }
-  };
-
-  const getDeliveryTimeLabel = (prefId: string | undefined | null) => {
-    if (!prefId) return 'ASAP / Standard';
-    switch(prefId) {
-      case 'same_day_2hr': return 'Today, within 2 Hours';
-      case 'same_day_evening': return 'Today, 4:00 PM - 7:00 PM';
-      case 'same_day_1_to_2': return 'Today, 1:00 PM - 2:00 PM';
-      case 'same_day_evening_6_7': return 'Today, 6:00 PM - 7:00 PM';
-      case 'same_day_4_to_9': return 'Today, 4:00 PM - 9:00 PM';
-      case 'next_day_morning': return 'Tomorrow, 8:00 AM - 10:00 AM';
-      case 'next_day_morning_8_9': return 'Tomorrow, 8:00 AM - 9:00 AM';
-      case 'next_day_afternoon': return 'Tomorrow, 12:00 PM - 2:00 PM';
-      case 'next_day_evening': return 'Tomorrow, 5:00 PM - 8:00 PM';
-      case 'next_day': return 'Next Day Delivery';
-      default: return prefId.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-    }
-  };
-
-  return (
-    <motion.div layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white rounded-xl p-3 border border-gray-100 shadow-sm flex flex-col h-full">
-      <div className="flex justify-between items-start mb-2">
-        <div>
-          <div className="flex items-center gap-2">
-            <h3 className="font-bold text-gray-900">#{order.id.slice(0, 8)}</h3>
-            <span className={cn('px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide', getStatusColor(order.status))}>
-              {getStatusLabel(order.status)}
-            </span>
-          </div>
-          <p className="text-sm font-medium text-gray-700 mt-1">{order.customer_name || 'Guest Customer'}</p>
-        </div>
-        <p className="text-xs text-gray-400">{order.created_at ? new Date(order.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}</p>
-      </div>
-
-      <div className="flex items-start gap-2 text-xs font-bold text-blue-800 bg-blue-50/80 border border-blue-100 p-2.5 rounded-lg mb-3">
-        <Clock className="w-4 h-4 text-blue-600 flex-shrink-0" />
-        <span>Slot: {getDeliveryTimeLabel((order as any).delivery_preference)}</span>
-      </div>
-
-      <div className="bg-gray-50 rounded-lg p-2 mb-3 text-sm space-y-1">
-        {items.map((item, idx) => (
-          <div key={idx} className="flex justify-between text-gray-600">
-            <span>
-                {item.quantity_kg ? `${item.quantity_kg} kg` : `${item.quantity} x`} {item.name}
-            </span>
-            <span>₹{item.price * (item.quantity_kg || item.quantity)}</span>
-          </div>
-        ))}
-
-        <div className="border-t border-dashed border-gray-200 mt-2 pt-2 flex justify-between font-bold text-gray-900">
-          <span>Total</span>
-          <span>₹{order.total_amount}</span>
-        </div>
-      </div>
-
-      <div className="space-y-2 mb-4 flex-1">
-        <div className="flex items-start gap-2 text-xs text-gray-500">
-          <Package className="w-3 h-3 mt-0.5 flex-shrink-0" />
-          <span className="line-clamp-2">{order.delivery_address}</span>
-        </div>
-        <div className="flex items-center gap-2 text-xs text-gray-500">
-          <Package className="w-3 h-3 flex-shrink-0" />
-          <a href={`tel:${order.phone_number}`} className="underline">{order.phone_number}</a>
-        </div>
-      </div>
-
-      <div className="mt-auto">
-        {order.status === 'delivered' ? (
-          <button disabled className="w-full flex items-center justify-center gap-2 bg-gray-100 text-gray-500 py-2.5 rounded-lg text-sm font-medium cursor-default">
-            <CheckCircle className="w-4 h-4" /> Order Completed
-          </button>
-        ) : order.status === 'out_for_delivery' ? (
-          <button 
-            onClick={() => onComplete(order)}
-            className="w-full flex items-center justify-center gap-2 bg-green-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
-          >
-            <CheckSquare className="w-4 h-4" /> Mark as Delivered
-          </button>
-        ) : order.status === 'confirmed' ? (
-          <button 
-            onClick={() => onDispatch(order)}
-            className="w-full flex items-center justify-center gap-2 bg-yellow-500 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-yellow-600 transition-colors"
-          >
-            <Bike className="w-4 h-4" /> Dispatch & Notify
-          </button>
-        ) : order.payment_status === 'paid' ? (
-          <button
-            onClick={() => onConfirm(order)}
-            className="w-full flex items-center justify-center gap-2 bg-[#1c1c1c] text-white py-2.5 rounded-lg text-sm font-medium hover:bg-black transition-colors shadow-md"
-          >
-            <CheckCircle className="w-4 h-4" /> Confirm & WhatsApp
-          </button>
-        ) : (
-          <button
-            onClick={() => onFollowUp(order)}
-            className="w-full flex items-center justify-center gap-2 bg-red-50 text-red-600 py-2.5 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors"
-          >
-            <MessageCircle className="w-4 h-4" /> Follow Up (No Payment)
-          </button>
-        )}
-      </div>
-    </motion.div>
-  );
-}
-
-// --- MAIN COMPONENT ---
+// --- MAIN COMPONENT ---loada
 
 const AdminMobile: React.FC = () => {
+  const [isMaintenance, setIsMaintenance] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const [email, setEmail] = useState('');
@@ -213,6 +68,15 @@ const AdminMobile: React.FC = () => {
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [isSavingProduct, setIsSavingProduct] = useState(false);
 
+  const toggleMaintenance = async () => {
+    const newValue = !isMaintenance;
+    setIsMaintenance(newValue);
+    
+    // ✅ ADDED "as any" to bypass the TypeScript error for the new table
+    await (supabase.from('store_settings') as any).update({ is_maintenance: newValue }).eq('id', 1);
+    
+    alert(`Maintenance mode is now ${newValue ? 'ON' : 'OFF'}`);
+  };
   useEffect(() => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -245,6 +109,10 @@ const AdminMobile: React.FC = () => {
   };
 
   const loadData = async () => {
+
+    // Inside loadData():
+    const { data: settings } = await (supabase.from('store_settings') as any).select('is_maintenance').eq('id', 1).single();
+    if (settings) setIsMaintenance(settings.is_maintenance);
     try {
       setIsLoading(true);
       const { data: productData, error: prodError } = await supabase
@@ -342,10 +210,78 @@ const AdminMobile: React.FC = () => {
   }, [orders, dateFilter, orderTab]);
 
 
-  const handleConfirmOrder = async (order: Order) => {};
-  const handleDispatchOrder = async (order: Order) => {};
-  const handleCompleteOrder = async (order: Order) => {};
-  const handleFollowUp = (order: Order) => {};
+  // --- WHATSAPP NOTIFICATION ENGINE ---
+  const notifyCustomer = async (phone: string, templateName: string, fallbackText: string) => {
+    if (!phone) return;
+    
+    try {
+      // 1. Try sending silently via your official Meta API backend
+      const response = await fetch('/api/send-utility', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phoneNumbers: [phone], templateName })
+      });
+      
+      if (!response.ok) throw new Error('API request failed');
+      console.log(`WhatsApp template '${templateName}' sent successfully via API.`);
+      
+    } catch (error) {
+      // 2. If API fails (or isn't deployed yet), fallback to manual WhatsApp Web
+      console.warn('API failed, falling back to wa.me link...');
+      const formattedPhone = phone.replace(/[^0-9]/g, ''); // Remove spaces/symbols
+      const waLink = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(fallbackText)}`;
+      window.open(waLink, '_blank');
+    }
+  };
+
+  // --- ORDER STATUS HANDLERS ---
+  // --- ORDER STATUS HANDLERS ---
+  const updateOrderStatus = async (orderId: string, newStatus: string) => {
+    // Cast to any to bypass strict literal type checks
+    const { error } = await (supabase.from('orders') as any).update({ status: newStatus }).eq('id', orderId);
+    
+    if (error) {
+      alert("Failed to update order status in database.");
+      return false;
+    }
+    
+    // Update local state instantly so UI feels fast
+    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus as any } : o));
+    return true;
+  };
+
+  const handleConfirmOrder = async (order: Order) => {
+    if (await updateOrderStatus(String(order.id), 'confirmed')) {
+      const orderIdStr = String(order.id).slice(0, 8);
+      const name = order.customer_name || 'Customer';
+      const msg = `Hi ${name}, your order #${orderIdStr} from The Fishy Mart is confirmed and is being prepped!`;
+      await notifyCustomer(order.phone_number, 'order_confirmed', msg);
+    }
+  };
+
+  const handleDispatchOrder = async (order: Order) => {
+    if (await updateOrderStatus(String(order.id), 'out_for_delivery')) {
+      const orderIdStr = String(order.id).slice(0, 8);
+      const name = order.customer_name || 'Customer';
+      const msg = `Great news ${name}! Your fresh fish order #${orderIdStr} is out for delivery.`;
+      await notifyCustomer(order.phone_number, 'order_dispatched', msg);
+    }
+  };
+
+  const handleCompleteOrder = async (order: Order) => {
+    if (await updateOrderStatus(String(order.id), 'delivered')) {
+      const orderIdStr = String(order.id).slice(0, 8);
+      const msg = `Your order #${orderIdStr} has been delivered. Thank you for choosing The Fishy Mart!`;
+      await notifyCustomer(order.phone_number, 'order_delivered', msg);
+    }
+  };
+
+  const handleFollowUp = async (order: Order) => {
+    const orderIdStr = String(order.id).slice(0, 8);
+    const name = order.customer_name || 'Customer';
+    const msg = `Hi ${name}, we noticed your payment for order #${orderIdStr} is pending. Let us know if you need help!`;
+    await notifyCustomer(order.phone_number, 'payment_followup', msg);
+  };
 
   const handleToggleStock = async (product: Product) => {
      const newStatus = !product.in_stock;
@@ -485,26 +421,14 @@ const AdminMobile: React.FC = () => {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-[#f4f5f7] flex items-center justify-center p-4">
-        <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-gray-100">
-          <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Lock className="w-6 h-6" />
-          </div>
-          <h2 className="text-2xl font-bold text-center text-gray-900 mb-2">Admin Login</h2>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <label className="text-xs font-bold text-gray-700 uppercase tracking-wide">Email Address</label>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full h-11 pl-10 bg-gray-50 border-none rounded-xl text-sm mt-1" placeholder="admin@fishymart.com" required />
-            </div>
-            <div>
-              <label className="text-xs font-bold text-gray-700 uppercase tracking-wide">Password</label>
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full h-11 pl-10 bg-gray-50 border-none rounded-xl text-sm mt-1" placeholder="••••••••" required />
-            </div>
-            {loginError && <p className="text-red-500 text-xs font-medium text-center">{loginError}</p>}
-            <button type="submit" className="w-full bg-[#1c1c1c] text-white font-bold h-11 rounded-xl shadow-lg mt-6">Access Dashboard</button>
-          </form>
-        </div>
-      </div>
+      <AdminLogin 
+        email={email} 
+        setEmail={setEmail} 
+        password={password} 
+        setPassword={setPassword} 
+        handleLogin={handleLogin} 
+        loginError={loginError} 
+      />
     );
   }
 
@@ -550,6 +474,13 @@ const AdminMobile: React.FC = () => {
             </div>
             <button onClick={handleLogout} className="p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors">
               <LogOut className="w-5 h-5" />
+            </button>
+
+            <button 
+              onClick={toggleMaintenance} 
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${isMaintenance ? 'bg-yellow-100 text-yellow-800 border border-yellow-300' : 'bg-gray-100 text-gray-600'}`}
+            >
+              {isMaintenance ? '⚠️ Maintenance ON' : 'Maintenance OFF'}
             </button>
           </div>
         </div>
@@ -600,16 +531,13 @@ const AdminMobile: React.FC = () => {
           </div>
         )}
 
-        {page === 'analytics' && (
-          <div className="space-y-4 max-w-4xl mx-auto">
-            <h2 className="text-lg font-bold">Analytics</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-              <StatCard icon={IndianRupee} label="Revenue" value={`₹${analytics.totalRevenue.toLocaleString()}`} color="bg-blue-50 text-blue-600" />
-              <StatCard icon={ShoppingBag} label="Orders" value={`${analytics.totalOrders}`} color="bg-purple-50 text-purple-600" />
-              <StatCard icon={Clock} label="Pending" value={`${analytics.pendingOrders}`} color="bg-yellow-50 text-yellow-600" />
-              <StatCard icon={Fish} label="Active" value={`${products.filter(p => p.in_stock).length}`} color="bg-green-50 text-green-600" />
-            </div>
-          </div>
+{page === 'analytics' && (
+          <AnalyticsDashboard 
+            totalRevenue={analytics.totalRevenue}
+            totalOrders={analytics.totalOrders}
+            pendingOrders={analytics.pendingOrders}
+            activeProductsCount={products.filter(p => p.in_stock).length}
+          />
         )}
 
         {page === 'inventory' && (
