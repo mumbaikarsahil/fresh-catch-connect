@@ -98,7 +98,7 @@ const Profile = () => {
             </div>
             <div className="text-left flex-1">
               <p className="font-semibold text-foreground text-base">Delivery Area</p>
-              <p className="text-sm text-muted-foreground mt-0.5">All over Mumbai</p>
+              <p className="text-sm text-muted-foreground mt-0.5">All over Mumbai City, Suburban, Thane city, Navi Mumbai, Vasai virar, Mira Bhayandar, </p>
             </div>
           </motion.div>
 
@@ -119,6 +119,27 @@ const Profile = () => {
           </motion.div>
           
         </div>
+
+        {/* ✅ ADDED: Powered by Biillo Footer */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+          className="pt-8 pb-4 text-center flex flex-col items-center justify-center space-y-1"
+        >
+          <p className="text-sm text-muted-foreground">
+            Powered by{' '}
+            <a
+              href="https://biillo.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-bold text-foreground hover:text-blue-600 transition-colors"
+            >
+              Biillo
+            </a>
+          </p>
+        </motion.div>
+
       </div>
     </ResponsiveLayout>
   );

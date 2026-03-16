@@ -18,6 +18,8 @@ export interface Order {
   items: OrderItem[]; 
   total_amount: number;
   delivery_address: string;
+  pincode?: string;
+  delivery_fee?: number;
   phone_number: string;
   customer_name: string;
   status: OrderStatus; 
@@ -32,6 +34,8 @@ export interface CreateOrderData {
   customer_name: string;
   phone_number: string;
   delivery_address: string;
+  pincode?: string;
+  delivery_fee?: number;
   delivery_preference: string;
   total_amount: number;
   status?: OrderStatus; 

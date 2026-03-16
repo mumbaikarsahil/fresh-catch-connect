@@ -175,7 +175,8 @@ const Index = () => {
         <HeroBanner />
       </div>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-8 md:py-16 pb-32">
+      {/* Adjusted pb-32 to pb-16 so it flows nicely into the footer */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-8 md:py-16 pb-16">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 md:mb-12 gap-2">
           <div>
             <h2 className="text-2xl md:text-4xl font-extrabold text-gray-900 tracking-tight">
@@ -203,6 +204,26 @@ const Index = () => {
           ))}
         </div>
       </main>
+
+      {/* --- NEW FOOTER SECTION --- */}
+      <footer className="w-full bg-gray-50 border-t border-gray-200 mt-auto hidden md:block">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-8 flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="text-center md:text-left">
+            <h3 className="text-lg font-extrabold text-gray-900 tracking-tight">The Fishy Mart</h3>
+            <p className="text-sm text-gray-500 mt-1">
+              Delivering the freshest catch right to your doorstep.
+            </p>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-500">Powered by</span>
+            <span className="text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent tracking-wide">
+              Biillo
+            </span>
+          </div>
+        </div>
+      </footer>
+      {/* --------------------------- */}
 
       <WhatsAppFloatingButton />
     </ResponsiveLayout>

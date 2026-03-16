@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MenuShareCard } from '@/components/admin/MenuShareCard';
 import { AdminLogin } from '@/components/admin/AdminLogin';
+import { AdminManualOrder } from '@/components/admin/AdminManualOrder';
 import { AnalyticsDashboard } from '@/components/admin/AnalyticsDashboard';
 import { OrderCard } from '@/components/admin/OrderCard';
 
@@ -67,6 +68,7 @@ const AdminMobile: React.FC = () => {
   const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [isSavingProduct, setIsSavingProduct] = useState(false);
+  const [isManualOrderModalOpen, setIsManualOrderModalOpen] = useState(false);
 
   const toggleMaintenance = async () => {
     const newValue = !isMaintenance;
@@ -508,7 +510,20 @@ const AdminMobile: React.FC = () => {
                 </select>
             </div>
 
-            <div className="flex items-center justify-between"><h2 className="text-lg font-bold flex items-center gap-2">{orderTab === 'active' ? 'Orders' : 'Abandoned Carts'}<span className="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded-full">{displayedOrders.length}</span></h2></div>
+            {/* ✅ UPDATED: Added Manual Order Button here */}
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold flex items-center gap-2">
+                {orderTab === 'active' ? 'Orders' : 'Abandoned Carts'}
+                <span className="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded-full">{displayedOrders.length}</span>
+              </h2>
+              
+              <button 
+                onClick={() => setIsManualOrderModalOpen(true)}
+                className="flex items-center gap-1.5 bg-[#1c1c1c] text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm hover:bg-gray-800 transition-colors"
+              >
+                <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Manual</span> Order
+              </button>
+            </div>
 
             {isLoading ? (
               <div className="flex justify-center py-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div></div>
@@ -682,6 +697,46 @@ const AdminMobile: React.FC = () => {
                 >
                   {isSavingProduct ? 'Saving...' : 'Save Product'}
                 </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {/* ✅ NEW: Manual Order Modal */}
+        {isManualOrderModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-0">
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setIsManualOrderModalOpen(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-2xl bg-[#f4f5f7] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+            >
+              <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-white sticky top-0 z-10">
+                <div className="flex items-center gap-2">
+                  <MessageCircle className="w-5 h-5 text-green-600" />
+                  <h2 className="text-lg font-bold text-gray-900">New WhatsApp/Offline Order</h2>
+                </div>
+                <button onClick={() => setIsManualOrderModalOpen(false)} className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* ✅ This is where you will import and render the AdminManualOrder component 
+                 we discussed earlier! Pass the close function and the products array to it.
+              */}
+              <div className="overflow-y-auto">
+                 <AdminManualOrder 
+                    products={products} 
+                    onClose={() => {
+                      setIsManualOrderModalOpen(false);
+                      loadData(); // Refresh the list so the new order shows up instantly
+                    }} 
+                 />
               </div>
             </motion.div>
           </div>
