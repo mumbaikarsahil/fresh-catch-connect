@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '@/context/CartContext';
 import { cn } from '@/lib/utils';
 import logo from '@/assets/logo.png';
+import { WHATSAPP_NUMBER } from '@/data/products';
 
 interface NavItemProps {
   icon: React.ReactNode;
@@ -274,8 +275,8 @@ export function DesktopSidebar() {
               exit={{ opacity: 0, width: 0 }}
               className="overflow-hidden whitespace-nowrap"
             >
-              <p className="text-sm font-bold text-card-foreground">Stay Fresh</p>
-              <p className="text-xs text-muted-foreground font-medium">Catch of the day</p>
+              <p className="text-sm font-bold text-card-foreground">for Support</p>
+              <p className="text-xs text-muted-foreground font-medium">Call on +{WHATSAPP_NUMBER}</p>
             </motion.div>
           )}
         </AnimatePresence>
