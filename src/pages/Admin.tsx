@@ -33,7 +33,8 @@ import {
   Trash2,
   Image as ImageIcon,
   Loader2,
-  Users
+  Users,
+  Settings
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Product } from '@/types/product';
@@ -455,64 +456,104 @@ const AdminMobile: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#f4f5f7] pb-24 lg:pb-8">
-      <header className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link to="/" className="p-2 rounded-full hover:bg-gray-100 transition-colors hidden lg:block">
-              <ArrowLeft className="w-5 h-5 text-gray-600" />
-            </Link>
-            <div>
-              <h1 className="text-lg font-bold text-gray-900">Admin Dashboard</h1>
-              <p className="text-xs text-gray-500 hidden md:block">Manage orders & inventory</p>
-            </div>
-          </div>
-          
-          <nav className="hidden lg:flex flex-1 justify-center items-center gap-12">
-            <button 
-              onClick={() => setPage('orders')} 
-              className={cn('text-sm font-bold flex items-center gap-2 px-2 py-5 transition-all border-b-2', page === 'orders' ? 'text-black border-black' : 'text-gray-400 border-transparent hover:text-gray-900')}
-            >
-              <ShoppingBag className="w-4 h-4" /> Orders
-            </button>
-            <button 
-              onClick={() => setPage('analytics')} 
-              className={cn('text-sm font-bold flex items-center gap-2 px-2 py-5 transition-all border-b-2', page === 'analytics' ? 'text-black border-black' : 'text-gray-400 border-transparent hover:text-gray-900')}
-            >
-              <TrendingUp className="w-4 h-4" /> Analytics
-            </button>
-            <button 
-              onClick={() => setPage('inventory')} 
-              className={cn('text-sm font-bold flex items-center gap-2 px-2 py-5 transition-all border-b-2', page === 'inventory' ? 'text-black border-black' : 'text-gray-400 border-transparent hover:text-gray-900')}
-            >
-              <Fish className="w-4 h-4" /> Inventory
-            </button>
-
-            <button 
-              onClick={() => setPage('crm')} 
-              className={cn('text-sm font-bold flex items-center gap-2 px-2 py-5 transition-all border-b-2', page === 'crm' ? 'text-black border-black' : 'text-gray-400 border-transparent hover:text-gray-900')}
-            >
-              <Users className="w-4 h-4" /> CRM
-            </button>
-          </nav>
-
-          <div className="flex items-center gap-4 ml-auto lg:ml-0">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-              <span className="text-xs font-medium text-green-700 hidden sm:inline">Live</span>
-            </div>
-            <button onClick={handleLogout} className="p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors">
-              <LogOut className="w-5 h-5" />
-            </button>
-
-            <button 
-              onClick={toggleMaintenance} 
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${isMaintenance ? 'bg-yellow-100 text-yellow-800 border border-yellow-300' : 'bg-gray-100 text-gray-600'}`}
-            >
-              {isMaintenance ? '⚠️ Maintenance ON' : 'Maintenance OFF'}
-            </button>
-          </div>
+      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-200">
+  {/* Added gap-2 and min-w-0 to handle tight squeezing */}
+  <div className="max-w-7xl mx-auto px-3 sm:px-4 h-14 flex items-center justify-between gap-2">
+    
+    {/* --- LEFT SIDE: BRAND --- */}
+    <div className="flex items-center gap-2 sm:gap-3 min-w-0 shrink"> 
+      <Link 
+        to="/" 
+        className="p-1.5 rounded-md hover:bg-gray-100 transition-colors hidden lg:block text-gray-500 hover:text-gray-900 shrink-0"
+        title="Back to Store"
+      >
+        <ArrowLeft className="w-4 h-4" />
+      </Link>
+      
+      <div className="hidden lg:block w-px h-4 bg-gray-300 shrink-0"></div> 
+      
+      <div className="flex items-center gap-2 min-w-0">
+        <div className="w-6 h-6 bg-black rounded-md flex items-center justify-center shadow-sm shrink-0">
+          <Fish className="w-3.5 h-3.5 text-white" />
         </div>
-      </header>
+        {/* On very small screens, drops "The" to just say "Fishy Mart", and truncates if needed */}
+        <h1 className="text-sm font-semibold text-gray-900 tracking-tight truncate">
+          <span className="hidden xs:inline">The </span>Fishy Mart
+        </h1>
+        {/* Hide the Admin badge on mobile to save space */}
+        <span className="hidden sm:inline-flex px-2 py-0.5 rounded-full bg-gray-100 border border-gray-200 text-gray-600 text-[10px] font-medium tracking-wide uppercase shrink-0">
+          Admin
+        </span>
+      </div>
+    </div>
+    
+    {/* --- CENTER: DESKTOP NAV --- */}
+    <nav className="hidden lg:flex items-center gap-1 shrink-0">
+      <button 
+        onClick={() => setPage('orders')} 
+        className={cn('text-sm font-medium flex items-center gap-2 px-3 py-1.5 rounded-md transition-all duration-200', 
+          page === 'orders' ? 'bg-gray-100 text-black' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50')}
+      >
+        <ShoppingBag className="w-4 h-4" /> Orders
+      </button>
+      <button 
+        onClick={() => setPage('analytics')} 
+        className={cn('text-sm font-medium flex items-center gap-2 px-3 py-1.5 rounded-md transition-all duration-200', 
+          page === 'analytics' ? 'bg-gray-100 text-black' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50')}
+      >
+        <TrendingUp className="w-4 h-4" /> Analytics
+      </button>
+      <button 
+        onClick={() => setPage('inventory')} 
+        className={cn('text-sm font-medium flex items-center gap-2 px-3 py-1.5 rounded-md transition-all duration-200', 
+          page === 'inventory' ? 'bg-gray-100 text-black' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50')}
+      >
+        <Fish className="w-4 h-4" /> Inventory
+      </button>
+      <button 
+        onClick={() => setPage('crm')} 
+        className={cn('text-sm font-medium flex items-center gap-2 px-3 py-1.5 rounded-md transition-all duration-200', 
+          page === 'crm' ? 'bg-gray-100 text-black' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50')}
+      >
+        <Users className="w-4 h-4" /> CRM
+      </button>
+    </nav>
+
+    {/* --- RIGHT SIDE: ACTIONS --- */}
+    <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+      
+      {/* Hide live badge on mobile to save space, show on tablets (md) and up */}
+      <div className="hidden md:flex items-center gap-2 px-2.5 py-1 rounded-md border border-gray-200 bg-gray-50/50 shrink-0">
+        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+        <span className="text-[10px] font-medium text-gray-600 tracking-wide uppercase">System Live</span>
+      </div>
+
+      {/* Maintenance Toggle: Shows Icon + Text on Desktop, ONLY Icon on mobile */}
+      <button 
+        onClick={toggleMaintenance} 
+        title={isMaintenance ? 'Turn Maintenance Off' : 'Turn Maintenance On'}
+        className={cn('flex items-center justify-center gap-1.5 p-1.5 sm:px-2.5 sm:py-1 rounded-md text-[11px] font-semibold transition-all uppercase tracking-wide border shrink-0', 
+          isMaintenance 
+            ? 'bg-amber-50 text-amber-700 border-amber-200' 
+            : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50 hover:text-gray-900')}
+      >
+        <Settings className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+        <span className="hidden sm:inline">{isMaintenance ? 'Maint. On' : 'Maint. Off'}</span>
+      </button>
+
+      <div className="w-px h-4 bg-gray-200 hidden sm:block shrink-0"></div>
+
+      {/* Logout Icon */}
+      <button 
+        onClick={handleLogout} 
+        title="Sign Out"
+        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors shrink-0"
+      >
+        <LogOut className="w-4 h-4" />
+      </button>
+    </div>
+  </div>
+</header>
 
       <main className="max-w-7xl mx-auto p-4 space-y-6 lg:mt-6">
         {page === 'orders' && (
