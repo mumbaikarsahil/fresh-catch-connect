@@ -1,9 +1,10 @@
 // src/components/admin/OrderCard.tsx
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Clock, Package, CheckCircle, CheckSquare, Bike, MessageCircle } from 'lucide-react';
+import { Clock, Package, CheckCircle, CheckSquare, Bike, MessageCircle, Printer } from 'lucide-react';
 import { Order, OrderItem } from '@/types/order';
 import { cn } from '@/lib/utils';
+import { ThermalReceipt } from '@/components/ThermalReceipt'; // ✅ Imported the receipt component
 
 // --- ORDER CARD ---
 export function OrderCard({ 
@@ -56,8 +57,86 @@ export function OrderCard({
     }
   };
 
+  // ✅ NEW: Format the date string as requested (e.g., 17 March 2026 12:45pm)
+  const formatOrderDate = (dateString?: string) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const options: Intl.DateTimeFormatOptions = { 
+      day: 'numeric', 
+      month: 'short', 
+      year: 'numeric', 
+      hour: 'numeric', 
+      minute: '2-digit', 
+      hour12: true 
+    };
+    // Result looks like "17 Mar 2026, 12:45 pm", we replace the comma to match your exact requested format
+    return date.toLocaleDateString('en-GB', options).replace(',', '');
+  };
+
+  // ✅ NEW: Handle Iframe Printing for this specific card
+  const handlePrint = () => {
+    const printContent = document.getElementById(`thermal-receipt-content-${order.id}`);
+    if (!printContent) return;
+
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'absolute';
+    iframe.style.width = '0px';
+    iframe.style.height = '0px';
+    iframe.style.border = 'none';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow?.document;
+    if (doc) {
+      doc.open();
+      doc.write(`
+        <html>
+          <head>
+            <style>
+              @page { size: 58mm auto; margin: 0; }
+              body { margin: 0; padding: 0; display: flex; justify-content: center; }
+            </style>
+          </head>
+          <body>
+            ${printContent.outerHTML}
+          </body>
+        </html>
+      `);
+      doc.close();
+
+      iframe.contentWindow?.focus();
+      iframe.contentWindow?.print();
+
+      setTimeout(() => {
+        document.body.removeChild(iframe);
+      }, 1000);
+    }
+  };
+
   return (
-    <motion.div layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white rounded-xl p-3 border border-gray-100 shadow-sm flex flex-col h-full">
+    <motion.div layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white rounded-xl p-3 border border-gray-100 shadow-sm flex flex-col h-full relative">
+      
+      {/* ✅ NEW: Hidden Receipt Component specific to this order card */}
+      <div className="hidden">
+        <div id={`thermal-receipt-content-${order.id}`}>
+          <ThermalReceipt 
+            orderData={{ 
+              customerName: order.customer_name || 'Guest Customer', 
+              phone: order.phone_number, 
+              address: order.delivery_address || '', 
+              items: items.map(i => ({ 
+                name: i.name, 
+                quantity: i.quantity_kg || i.quantity, 
+                price: i.price 
+              })), 
+              deliveryFee: (order as any).delivery_fee || 85, // Fallback if delivery_fee isn't on the type
+              finalTotal: order.total_amount, 
+              paymentMethod: order.payment_status === 'paid' ? 'upi_paid' : 'cod',
+              orderId: String(order.id).substring(0,8)
+            }} 
+          />
+        </div>
+      </div>
+
       {/* Header Info */}
       <div className="flex justify-between items-start mb-2">
         <div>
@@ -69,10 +148,23 @@ export function OrderCard({
           </div>
           <p className="text-sm font-medium text-gray-700 mt-1">{order.customer_name || 'Guest Customer'}</p>
         </div>
-        <p className="text-xs text-gray-400">{order.created_at ? new Date(order.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}</p>
+        
+        {/* Right side of header: Date/Time + Print Button */}
+        <div className="flex flex-col items-end gap-1">
+          <p className="text-[11px] font-medium text-gray-400">
+            {formatOrderDate(order.created_at)}
+          </p>
+          <button 
+            onClick={handlePrint}
+            title="Print Receipt"
+            className="p-1.5 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+          >
+            <Printer className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
-      {/* ✅ UPGRADED DELIVERY TIME BOX */}
+      {/* UPGRADED DELIVERY TIME BOX */}
       <div className="flex items-start gap-3 bg-blue-50 border border-blue-100 p-3 rounded-lg mb-3 shadow-sm">
         <div className="bg-blue-100 p-1.5 rounded-md mt-0.5">
           <Clock className="w-4 h-4 text-blue-700" />

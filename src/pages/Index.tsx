@@ -8,7 +8,7 @@ import { ProductUI } from '@/types/product';
 import { useCart } from '@/context/CartContext'; 
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
-import { Fish } from 'lucide-react';
+import { Fish, MapPin, Phone, Mail } from 'lucide-react';
 
 const Index = () => {
   const [products, setProducts] = useState<ProductUI[]>([]); 
@@ -175,8 +175,7 @@ const Index = () => {
         <HeroBanner />
       </div>
 
-      {/* Adjusted pb-32 to pb-16 so it flows nicely into the footer */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-8 md:py-16 pb-16">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-8 md:py-16 pb-24 md:pb-16">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 md:mb-12 gap-2">
           <div>
             <h2 className="text-2xl md:text-4xl font-extrabold text-gray-900 tracking-tight">
@@ -205,22 +204,108 @@ const Index = () => {
         </div>
       </main>
 
-      {/* --- NEW FOOTER SECTION --- */}
-      <footer className="w-full bg-gray-50 border-t border-gray-200 mt-auto hidden md:block">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="text-center md:text-left">
+      {/* --- UPGRADED FOOTER SECTION --- */}
+      
+      {/* 1. Desktop Footer */}
+      <footer className="w-full bg-[#f8f9fa] border-t border-gray-200 mt-auto hidden md:block pt-16 pb-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
+          
+          {/* Main Footer Content */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+            {/* Brand Column */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Fish className="w-6 h-6 text-blue-600" />
+                <h3 className="text-xl font-extrabold text-gray-900 tracking-tight">The Fishy Mart</h3>
+              </div>
+              <p className="text-sm text-gray-500 leading-relaxed max-w-xs">
+                Premium quality, sustainably sourced seafood delivered fresh from the docks directly to your kitchen. Cleaned, cut, and ready to cook.
+              </p>
+            </div>
+
+            {/* Quick Links Column */}
+            <div>
+              <h4 className="font-bold text-gray-900 mb-4 uppercase tracking-wider text-xs">Customer Service</h4>
+              <ul className="space-y-3 text-sm text-gray-500">
+                <li><a href="/contact" className="hover:text-blue-600 transition-colors">Contact us</a></li>
+                <li><a href="/about" className="hover:text-blue-600 transition-colors">About</a></li>
+                <li><a href="#" className="hover:text-blue-600 transition-colors">Terms of Service</a></li>
+                <li><a href="#" className="hover:text-blue-600 transition-colors">FAQ</a></li>
+              </ul>
+            </div>
+
+            {/* Contact Column */}
+            <div>
+              <h4 className="font-bold text-gray-900 mb-4 uppercase tracking-wider text-xs">Get in Touch</h4>
+              <ul className="space-y-3 text-sm text-gray-500">
+                <li className="flex items-start gap-3">
+                  <MapPin className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
+                  <span>Shop no 25, Prakash Thorat Marg, nr. Railway station, Sahadeep Colony, 9<br/>Chembur West, Ramabai Colony, Chembur, Mumbai, Maharashtra 40008</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <Phone className="w-4 h-4 text-gray-400 shrink-0" />
+                  <a href={`tel:+${WHATSAPP_NUMBER}`} className="hover:text-blue-600 transition-colors">+91 90821 65743</a>
+                </li>
+                <li className="flex items-center gap-3">
+                  <Mail className="w-4 h-4 text-gray-400 shrink-0" />
+                  <a href="mailto:hello@thefishymart.com" className="hover:text-blue-600 transition-colors">hello@thefishymart.com</a>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Bottom Bar: Copyright & Biillo Badge */}
+          <div className="border-t border-gray-200 pt-6 flex flex-col items-center justify-center gap-2">
+            <p className="text-xs text-gray-400">
+              © {new Date().getFullYear()} The Fishy Mart. All rights reserved.
+            </p>
+            
+            {/* VERY SMALL Powered By Badge */}
+            <div className="flex items-center justify-center gap-1 opacity-60 hover:opacity-100 transition-opacity cursor-pointer">
+              <span className="text-[10px] font-medium text-gray-500 uppercase tracking-widest">Powered by</span>
+              <span className="text-xs font-bold text-gray-800 tracking-wide">BIILLO</span>
+            </div>
+          </div>
+
+        </div>
+      </footer>
+
+      {/* 2. Mobile Footer */}
+      <footer className="w-full bg-[#f8f9fa] border-t border-gray-200 mt-12 md:hidden pt-8 pb-32">
+        <div className="px-6 flex flex-col items-center text-center space-y-6">
+          
+          <div className="flex flex-col items-center gap-2">
+            <Fish className="w-6 h-6 text-blue-600" />
             <h3 className="text-lg font-extrabold text-gray-900 tracking-tight">The Fishy Mart</h3>
-            <p className="text-sm text-gray-500 mt-1">
-              Delivering the freshest catch right to your doorstep.
+            <p className="text-xs text-gray-500 leading-relaxed max-w-[250px]">
+              Premium quality, sustainably sourced seafood delivered fresh to your kitchen.
             </p>
           </div>
-          
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-500">Powered by</span>
-            <span className="text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent tracking-wide">
-              Biillo
-            </span>
+
+          <div className="flex flex-col items-center gap-3 text-sm text-gray-600">
+            <a href={`tel:+${WHATSAPP_NUMBER}`} className="flex items-center gap-2 font-medium">
+              <Phone className="w-4 h-4" /> +91 90821 65743
+            </a>
+            <div className="flex items-center gap-4 text-xs text-gray-400">
+              <a href="#" className="hover:underline">Terms</a>
+              <a href="#" className="hover:underline">Privacy</a>
+              <a href="#" className="hover:underline">Returns</a>
+            </div>
           </div>
+
+          <div className="w-16 h-[1px] bg-gray-200"></div>
+
+          <div className="flex flex-col items-center gap-1">
+            <p className="text-[10px] text-gray-400">
+              © {new Date().getFullYear()} The Fishy Mart.
+            </p>
+            {/* VERY SMALL Powered By Badge for Mobile */}
+            <div className="flex items-center justify-center gap-1 opacity-50 mt-1">
+              <span className="text-[9px] font-medium text-gray-500 uppercase tracking-widest">Powered by</span>
+              <span className="text-[10px] font-bold text-gray-800 tracking-wide">BIILLO</span>
+            </div>
+          </div>
+
         </div>
       </footer>
       {/* --------------------------- */}

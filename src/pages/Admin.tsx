@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion'; // Removed AnimatePresence
 import { MenuShareCard } from '@/components/admin/MenuShareCard';
 import { AdminLogin } from '@/components/admin/AdminLogin';
 import { AdminManualOrder } from '@/components/admin/AdminManualOrder';
@@ -29,7 +29,9 @@ import {
   Plus,  
   X,     
   Upload,
-  Trash2 
+  Trash2,
+  Image as ImageIcon,
+  Loader2
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Product } from '@/types/product';
@@ -46,7 +48,7 @@ const BUCKET_URL = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/publi
 const getFullImageUrl = (path: string) => path?.startsWith('http') ? path : `${BUCKET_URL}${path}`;
 
 
-// --- MAIN COMPONENT ---loada
+// --- MAIN COMPONENT ---
 
 const AdminMobile: React.FC = () => {
   const [isMaintenance, setIsMaintenance] = useState(false);
@@ -67,18 +69,17 @@ const AdminMobile: React.FC = () => {
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
   const [isSavingProduct, setIsSavingProduct] = useState(false);
   const [isManualOrderModalOpen, setIsManualOrderModalOpen] = useState(false);
 
   const toggleMaintenance = async () => {
     const newValue = !isMaintenance;
     setIsMaintenance(newValue);
-    
-    // ✅ ADDED "as any" to bypass the TypeScript error for the new table
     await (supabase.from('store_settings') as any).update({ is_maintenance: newValue }).eq('id', 1);
-    
     alert(`Maintenance mode is now ${newValue ? 'ON' : 'OFF'}`);
   };
+
   useEffect(() => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -111,8 +112,6 @@ const AdminMobile: React.FC = () => {
   };
 
   const loadData = async () => {
-
-    // Inside loadData():
     const { data: settings } = await (supabase.from('store_settings') as any).select('is_maintenance').eq('id', 1).single();
     if (settings) setIsMaintenance(settings.is_maintenance);
     try {
@@ -215,9 +214,7 @@ const AdminMobile: React.FC = () => {
   // --- WHATSAPP NOTIFICATION ENGINE ---
   const notifyCustomer = async (phone: string, templateName: string, fallbackText: string) => {
     if (!phone) return;
-    
     try {
-      // 1. Try sending silently via your official Meta API backend
       const response = await fetch('/api/send-utility', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -226,28 +223,21 @@ const AdminMobile: React.FC = () => {
       
       if (!response.ok) throw new Error('API request failed');
       console.log(`WhatsApp template '${templateName}' sent successfully via API.`);
-      
     } catch (error) {
-      // 2. If API fails (or isn't deployed yet), fallback to manual WhatsApp Web
       console.warn('API failed, falling back to wa.me link...');
-      const formattedPhone = phone.replace(/[^0-9]/g, ''); // Remove spaces/symbols
+      const formattedPhone = phone.replace(/[^0-9]/g, ''); 
       const waLink = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(fallbackText)}`;
       window.open(waLink, '_blank');
     }
   };
 
   // --- ORDER STATUS HANDLERS ---
-  // --- ORDER STATUS HANDLERS ---
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
-    // Cast to any to bypass strict literal type checks
     const { error } = await (supabase.from('orders') as any).update({ status: newStatus }).eq('id', orderId);
-    
     if (error) {
       alert("Failed to update order status in database.");
       return false;
     }
-    
-    // Update local state instantly so UI feels fast
     setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus as any } : o));
     return true;
   };
@@ -319,6 +309,30 @@ const AdminMobile: React.FC = () => {
     }
   };
 
+  // --- IMAGE MANAGEMENT HELPERS ---
+  const handleRemoveExistingImage = (indexToRemove: number) => {
+    if (!editingProduct || !editingProduct.images) return;
+    const newImages = [...editingProduct.images];
+    const removedImage = newImages.splice(indexToRemove, 1)[0];
+    
+    setEditingProduct({ ...editingProduct, images: newImages });
+    setImagesToDelete(prev => [...prev, removedImage]); 
+  };
+
+  const handleSetCoverExisting = (indexToPromote: number) => {
+    if (!editingProduct || !editingProduct.images) return;
+    const newImages = [...editingProduct.images];
+    const [item] = newImages.splice(indexToPromote, 1);
+    newImages.unshift(item); 
+    setEditingProduct({ ...editingProduct, images: newImages });
+  };
+
+  const handleRemoveNewImage = (indexToRemove: number) => {
+    const newFiles = [...imageFiles];
+    newFiles.splice(indexToRemove, 1);
+    setImageFiles(newFiles);
+  };
+
   const openProductModal = (product?: Product) => {
     if (product) {
       setEditingProduct({ ...product });
@@ -332,6 +346,7 @@ const AdminMobile: React.FC = () => {
       });
     }
     setImageFiles([]);
+    setImagesToDelete([]);
     setIsProductModalOpen(true);
   };
 
@@ -339,6 +354,7 @@ const AdminMobile: React.FC = () => {
     setIsProductModalOpen(false);
     setEditingProduct(null);
     setImageFiles([]);
+    setImagesToDelete([]);
   };
 
   const handleSaveProduct = async () => {
@@ -348,25 +364,18 @@ const AdminMobile: React.FC = () => {
     }
 
     setIsSavingProduct(true);
+    // ✅ FIX: Save this flag early, because editingProduct will be reset to null before the alert fires!
+    const isUpdate = !!editingProduct.id; 
+
     try {
-      // 1. Keep the existing images so we don't accidentally delete them
       let uploadedImages: string[] = editingProduct.images ? [...editingProduct.images] : [];
       
-      // 2. Find out what number we should start counting from
-      let existingImageCount = uploadedImages.length; 
-
       if (imageFiles.length > 0) {
         const slug = slugify(editingProduct.name);
-
         for (let i = 0; i < imageFiles.length; i++) {
           const file = imageFiles[i];
           const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-          
-          // 3. Generate the exact sequential number (e.g., if 1 exists, next is 2)
-          const nextSerialNumber = existingImageCount + i + 1; 
-          
-          // Format: fish-surmai-slice-1.jpg, fish-surmai-slice-2.jpg, etc.
-          const fileName = `fish-${slug}-${nextSerialNumber}.${ext}`;
+          const fileName = `fish-${slug}-${Date.now()}-${i}.${ext}`;
           
           const { error: uploadError } = await supabase.storage
             .from('products')
@@ -376,9 +385,17 @@ const AdminMobile: React.FC = () => {
             console.error("Supabase Storage Error:", uploadError);
             throw new Error(`Image Upload Failed: ${uploadError.message}`);
           }
-          
-          // 4. Append the new filename to the array instead of overwriting it
           uploadedImages.push(fileName);
+        }
+      }
+
+      if (imagesToDelete.length > 0) {
+        const { error: deleteError } = await supabase.storage
+          .from('products')
+          .remove(imagesToDelete);
+          
+        if (deleteError) {
+          console.warn("Failed to delete old images from bucket, but continuing:", deleteError);
         }
       }
 
@@ -388,12 +405,11 @@ const AdminMobile: React.FC = () => {
         imageName: uploadedImages[0] || editingProduct.imageName || 'placeholder.jpg',
       };
 
-      if (editingProduct.id) {
+      if (isUpdate) {
         const { id, ...updatePayload } = productPayload; 
-        
         const { error } = await (supabase.from('products') as any)
           .update(updatePayload)
-          .eq('id', editingProduct.id);
+          .eq('id', editingProduct!.id);
           
         if (error) throw error;
       } else {
@@ -401,14 +417,13 @@ const AdminMobile: React.FC = () => {
           ...productPayload,
           id: crypto.randomUUID() 
         };
-        
         const { error } = await (supabase.from('products') as any).insert([insertPayload]);
         if (error) throw error;
       }
 
       await loadData(); 
-      closeProductModal();
-      alert(`Product ${editingProduct.id ? 'updated' : 'added'} successfully!`);
+      closeProductModal(); 
+      alert(`Product ${isUpdate ? 'updated' : 'added'} successfully!`);
 
     } catch (err: any) {
       console.error("Error saving product:", err);
@@ -417,6 +432,7 @@ const AdminMobile: React.FC = () => {
       setIsSavingProduct(false);
     }
   };
+
   // --- RENDER ---
 
   if (authLoading) return <div className="min-h-screen bg-[#f4f5f7] flex items-center justify-center">Loading...</div>;
@@ -510,7 +526,6 @@ const AdminMobile: React.FC = () => {
                 </select>
             </div>
 
-            {/* ✅ UPDATED: Added Manual Order Button here */}
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold flex items-center gap-2">
                 {orderTab === 'active' ? 'Orders' : 'Abandoned Carts'}
@@ -546,7 +561,7 @@ const AdminMobile: React.FC = () => {
           </div>
         )}
 
-{page === 'analytics' && (
+        {page === 'analytics' && (
           <AnalyticsDashboard 
             totalRevenue={analytics.totalRevenue}
             totalOrders={analytics.totalOrders}
@@ -557,7 +572,6 @@ const AdminMobile: React.FC = () => {
 
         {page === 'inventory' && (
           <div className="space-y-4 max-w-4xl mx-auto">
-            {/* ✅ NEW MARKETING COMPONENT HERE */}
             <MenuShareCard products={products} />
 
             <div className="flex justify-between items-center">
@@ -613,135 +627,167 @@ const AdminMobile: React.FC = () => {
         )}
       </main>
 
-      <AnimatePresence>
-        {isProductModalOpen && editingProduct && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-0">
-            <motion.div 
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={closeProductModal}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
-            >
-              <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                <h2 className="text-lg font-bold text-gray-900">{editingProduct.id ? 'Edit Product' : 'Add New Product'}</h2>
-                <button onClick={closeProductModal} className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-200 transition-colors"><X className="w-5 h-5" /></button>
-              </div>
+      {/* ✅ REMOVED ANIMATEPRESENCE TO PREVENT REACT CRASH */}
+      {isProductModalOpen && editingProduct && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-0">
+          <div 
+            onClick={closeProductModal}
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+          />
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+          >
+            <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+              <h2 className="text-lg font-bold text-gray-900">{editingProduct.id ? 'Edit Product' : 'Add New Product'}</h2>
+              <button onClick={closeProductModal} className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-200 transition-colors"><X className="w-5 h-5" /></button>
+            </div>
 
-              <div className="p-5 overflow-y-auto flex-1 space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="col-span-2">
-                    <label className="text-xs font-bold text-gray-600 uppercase">Product Name</label>
-                    <input type="text" className="w-full mt-1 border rounded-lg p-2.5 text-sm outline-none focus:border-black" value={editingProduct.name} onChange={e => setEditingProduct({...editingProduct, name: e.target.value})} placeholder="e.g. Surmai Slice" />
-                  </div>
-                  
-                  <div>
-                    <label className="text-xs font-bold text-gray-600 uppercase">Price (₹)</label>
-                    <input type="number" className="w-full mt-1 border rounded-lg p-2.5 text-sm outline-none focus:border-black" value={editingProduct.price || ''} onChange={e => setEditingProduct({...editingProduct, price: parseFloat(e.target.value)})} />
-                  </div>
+            <div className="p-5 overflow-y-auto flex-1 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <label className="text-xs font-bold text-gray-600 uppercase">Product Name</label>
+                  <input type="text" className="w-full mt-1 border rounded-lg p-2.5 text-sm outline-none focus:border-black" value={editingProduct.name} onChange={e => setEditingProduct({...editingProduct, name: e.target.value})} placeholder="e.g. Surmai Slice" />
+                </div>
+                
+                <div>
+                  <label className="text-xs font-bold text-gray-600 uppercase">Price (₹)</label>
+                  <input type="number" className="w-full mt-1 border rounded-lg p-2.5 text-sm outline-none focus:border-black" value={editingProduct.price || ''} onChange={e => setEditingProduct({...editingProduct, price: parseFloat(e.target.value)})} />
+                </div>
 
-                  <div>
-                    <label className="text-xs font-bold text-gray-600 uppercase">Unit</label>
-                    <select className="w-full mt-1 border rounded-lg p-2.5 text-sm outline-none focus:border-black bg-white" value={editingProduct.unit} onChange={e => setEditingProduct({...editingProduct, unit: e.target.value as any})}>
-                      <option value="kg">kg</option>
-                      <option value="pc">pc</option>
-                      <option value="pack">pack</option>
-                    </select>
-                  </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-600 uppercase">Unit</label>
+                  <select className="w-full mt-1 border rounded-lg p-2.5 text-sm outline-none focus:border-black bg-white" value={editingProduct.unit} onChange={e => setEditingProduct({...editingProduct, unit: e.target.value as any})}>
+                    <option value="kg">kg</option>
+                    <option value="pc">pc</option>
+                    <option value="pack">pack</option>
+                  </select>
+                </div>
 
-                  <div className="col-span-2">
-                    <label className="text-xs font-bold text-gray-600 uppercase">Description</label>
-                    <textarea className="w-full mt-1 border rounded-lg p-2.5 text-sm outline-none focus:border-black" rows={2} value={editingProduct.description || ''} onChange={e => setEditingProduct({...editingProduct, description: e.target.value})} placeholder="Freshly caught..." />
-                  </div>
+                <div className="col-span-2">
+                  <label className="text-xs font-bold text-gray-600 uppercase">Description</label>
+                  <textarea className="w-full mt-1 border rounded-lg p-2.5 text-sm outline-none focus:border-black" rows={2} value={editingProduct.description || ''} onChange={e => setEditingProduct({...editingProduct, description: e.target.value})} placeholder="Freshly caught..." />
+                </div>
 
-                  {/* ✅ SMART UPLOAD AREA: Z-Index Fix & Visual Previews */}
-                  <div className="col-span-2">
-                    <label className="text-xs font-bold text-gray-600 uppercase mb-2 block">Photos</label>
-                    <div className="border-2 border-dashed border-gray-200 rounded-xl p-4 flex flex-col items-center justify-center text-center hover:bg-gray-50 transition-colors relative cursor-pointer min-h-[100px]">
-                      <input 
-                        type="file" multiple accept="image/*" 
-                        onChange={(e) => e.target.files && setImageFiles(Array.from(e.target.files))}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
-                      />
-                      <Upload className="w-6 h-6 text-gray-400 mb-2" />
-                      <p className="text-sm font-medium text-gray-700">Tap to upload photos</p>
-                    </div>
+                {/* SMART UPLOAD AREA WITH COVER/DELETE CONTROLS */}
+                <div className="col-span-2">
+                  <label className="text-xs font-bold text-gray-600 uppercase mb-2 flex items-center gap-1">
+                    <ImageIcon className="w-4 h-4" /> Photos
+                  </label>
 
-                    {/* ✅ PREVIEW RENDERER: Let the user actually see what they selected */}
-                    {imageFiles.length > 0 ? (
-                      <div className="flex gap-2 mt-3 overflow-x-auto pb-2">
-                        {imageFiles.map((file, idx) => (
-                          <img key={idx} src={URL.createObjectURL(file)} alt="Preview" className="w-16 h-16 object-cover rounded-lg border border-gray-200 shadow-sm flex-shrink-0" />
-                        ))}
-                      </div>
-                    ) : editingProduct.images && editingProduct.images.length > 0 ? (
-                      <div className="flex gap-2 mt-3 overflow-x-auto pb-2">
+                  {/* Show Existing Images */}
+                  {editingProduct.images && editingProduct.images.length > 0 && (
+                    <div className="mb-3">
+                      <p className="text-[10px] text-gray-500 mb-1">CURRENT PHOTOS (1st is Cover)</p>
+                      <div className="flex gap-2 overflow-x-auto pb-2">
                         {editingProduct.images.map((img, idx) => (
-                          <img key={idx} src={getFullImageUrl(img)} alt="Current" className="w-16 h-16 object-cover rounded-lg border border-gray-200 shadow-sm flex-shrink-0" />
+                          <div key={idx} className="relative group flex-shrink-0 w-20 h-20">
+                            <img 
+                              src={getFullImageUrl(img)} 
+                              alt={`Current ${idx}`} 
+                              className={cn("w-full h-full object-cover rounded-lg shadow-sm transition-all", idx === 0 ? "border-2 border-blue-500" : "border border-gray-200")} 
+                            />
+                            {idx === 0 && (
+                              <span className="absolute -top-2 -left-2 bg-blue-500 text-white text-[9px] px-1.5 py-0.5 rounded shadow-sm font-bold">COVER</span>
+                            )}
+                            
+                            {/* Hover Controls */}
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex flex-col items-center justify-center gap-1 backdrop-blur-[1px]">
+                              {idx !== 0 && (
+                                <button onClick={() => handleSetCoverExisting(idx)} className="text-[10px] bg-white text-gray-900 px-2 py-1 rounded shadow-sm font-bold hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                                  Make Cover
+                                </button>
+                              )}
+                              <button onClick={() => handleRemoveExistingImage(idx)} className="p-1 bg-red-500 text-white rounded-full shadow-sm hover:bg-red-600 transition-colors">
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </div>
                         ))}
                       </div>
-                    ) : null}
+                    </div>
+                  )}
+
+                  {/* Show New Uploads Preview */}
+                  {imageFiles.length > 0 && (
+                    <div className="mb-3">
+                      <p className="text-[10px] text-gray-500 mb-1">NEW PHOTOS TO UPLOAD</p>
+                      <div className="flex gap-2 overflow-x-auto pb-2">
+                        {imageFiles.map((file, idx) => (
+                          <div key={idx} className="relative group flex-shrink-0 w-20 h-20">
+                            <img src={URL.createObjectURL(file)} alt="Preview" className="w-full h-full object-cover rounded-lg border border-green-300 shadow-sm" />
+                            <button onClick={() => handleRemoveNewImage(idx)} className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600">
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Upload Dropzone */}
+                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-4 flex flex-col items-center justify-center text-center hover:bg-gray-50 transition-colors relative cursor-pointer min-h-[80px]">
+                    <input 
+                      type="file" multiple accept="image/*" 
+                      onChange={(e) => e.target.files && setImageFiles(prev => [...prev, ...Array.from(e.target.files!)])}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
+                    />
+                    <Upload className="w-6 h-6 text-gray-400 mb-1" />
+                    <p className="text-xs font-medium text-gray-600">Tap to upload more photos</p>
                   </div>
+
                 </div>
               </div>
+            </div>
 
-              <div className="p-4 border-t border-gray-100 bg-gray-50">
-                <button 
-                  onClick={handleSaveProduct}
-                  disabled={isSavingProduct}
-                  className={cn("w-full bg-[#1c1c1c] text-white font-bold h-11 rounded-xl shadow-md transition-all", isSavingProduct && "bg-gray-400 cursor-not-allowed opacity-70")}
-                >
-                  {isSavingProduct ? 'Saving...' : 'Save Product'}
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
+            <div className="p-4 border-t border-gray-100 bg-gray-50">
+              <button 
+                onClick={handleSaveProduct}
+                disabled={isSavingProduct}
+                className={cn("w-full bg-[#1c1c1c] text-white font-bold h-11 rounded-xl shadow-md transition-all flex items-center justify-center gap-2", isSavingProduct && "bg-gray-400 cursor-not-allowed opacity-70")}
+              >
+                {isSavingProduct && <Loader2 className="w-4 h-4 animate-spin" />}
+                {isSavingProduct ? 'Saving...' : 'Save Product'}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
 
-        {/* ✅ NEW: Manual Order Modal */}
-        {isManualOrderModalOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-0">
-            <motion.div 
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={() => setIsManualOrderModalOpen(false)}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-2xl bg-[#f4f5f7] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
-            >
-              <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-white sticky top-0 z-10">
-                <div className="flex items-center gap-2">
-                  <MessageCircle className="w-5 h-5 text-green-600" />
-                  <h2 className="text-lg font-bold text-gray-900">New WhatsApp/Offline Order</h2>
-                </div>
-                <button onClick={() => setIsManualOrderModalOpen(false)} className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors">
-                  <X className="w-5 h-5" />
-                </button>
+      {isManualOrderModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-0">
+          <div 
+            onClick={() => setIsManualOrderModalOpen(false)}
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+          />
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="relative w-full max-w-2xl bg-[#f4f5f7] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+          >
+            <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-white sticky top-0 z-10">
+              <div className="flex items-center gap-2">
+                <MessageCircle className="w-5 h-5 text-green-600" />
+                <h2 className="text-lg font-bold text-gray-900">New WhatsApp/Offline Order</h2>
               </div>
+              <button onClick={() => setIsManualOrderModalOpen(false)} className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-              {/* ✅ This is where you will import and render the AdminManualOrder component 
-                 we discussed earlier! Pass the close function and the products array to it.
-              */}
-              <div className="overflow-y-auto">
-                 <AdminManualOrder 
-                    products={products} 
-                    onClose={() => {
-                      setIsManualOrderModalOpen(false);
-                      loadData(); // Refresh the list so the new order shows up instantly
-                    }} 
-                 />
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+            <div className="overflow-y-auto">
+               <AdminManualOrder 
+                  products={products} 
+                  onClose={() => {
+                    setIsManualOrderModalOpen(false);
+                    loadData(); 
+                  }} 
+               />
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 lg:hidden z-50">
         <div className="max-w-4xl mx-auto px-4 py-2 flex items-center justify-between">
