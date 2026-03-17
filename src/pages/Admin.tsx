@@ -5,6 +5,7 @@ import { AdminLogin } from '@/components/admin/AdminLogin';
 import { AdminManualOrder } from '@/components/admin/AdminManualOrder';
 import { AnalyticsDashboard } from '@/components/admin/AnalyticsDashboard';
 import { OrderCard } from '@/components/admin/OrderCard';
+import { CustomerCRM } from '@/components/admin/CustomerCRM';
 
 import {
   Fish,
@@ -31,7 +32,8 @@ import {
   Upload,
   Trash2,
   Image as ImageIcon,
-  Loader2
+  Loader2,
+  Users
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Product } from '@/types/product';
@@ -52,6 +54,7 @@ const getFullImageUrl = (path: string) => path?.startsWith('http') ? path : `${B
 
 const AdminMobile: React.FC = () => {
   const [isMaintenance, setIsMaintenance] = useState(false);
+  
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const [email, setEmail] = useState('');
@@ -61,7 +64,7 @@ const AdminMobile: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [page, setPage] = useState<'orders' | 'analytics' | 'inventory'>('orders');
+  const [page, setPage] = useState<'orders' | 'analytics' | 'inventory' | 'crm'>('orders');
   
   const [orderTab, setOrderTab] = useState<'active' | 'abandoned'>('active');
   const [dateFilter, setDateFilter] = useState<'today' | 'yesterday' | 'week' | 'all'>('today');
@@ -483,6 +486,13 @@ const AdminMobile: React.FC = () => {
             >
               <Fish className="w-4 h-4" /> Inventory
             </button>
+
+            <button 
+              onClick={() => setPage('crm')} 
+              className={cn('text-sm font-bold flex items-center gap-2 px-2 py-5 transition-all border-b-2', page === 'crm' ? 'text-black border-black' : 'text-gray-400 border-transparent hover:text-gray-900')}
+            >
+              <Users className="w-4 h-4" /> CRM
+            </button>
           </nav>
 
           <div className="flex items-center gap-4 ml-auto lg:ml-0">
@@ -584,6 +594,7 @@ const AdminMobile: React.FC = () => {
                </button>
             </div>
 
+
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 divide-y divide-gray-100 overflow-hidden">
               {products.map(p => (
                 <div key={p.id} className="p-3 md:p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -624,6 +635,9 @@ const AdminMobile: React.FC = () => {
               ))}
             </div>
           </div>
+        )}
+        {page === 'crm' && (
+          <CustomerCRM />
         )}
       </main>
 
@@ -794,7 +808,7 @@ const AdminMobile: React.FC = () => {
           <button onClick={() => setPage('orders')} className={cn('flex-1 flex flex-col items-center text-xs py-2 transition-colors', page === 'orders' ? 'text-black font-bold' : 'text-gray-400 hover:text-gray-600')}><ShoppingBag className="w-5 h-5 mb-1" /> Orders</button>
           <button onClick={() => setPage('analytics')} className={cn('flex-1 flex flex-col items-center text-xs py-2 transition-colors', page === 'analytics' ? 'text-black font-bold' : 'text-gray-400 hover:text-gray-600')}><TrendingUp className="w-5 h-5 mb-1" /> Analytics</button>
           <button onClick={() => setPage('inventory')} className={cn('flex-1 flex flex-col items-center text-xs py-2 transition-colors', page === 'inventory' ? 'text-black font-bold' : 'text-gray-400 hover:text-gray-600')}><Fish className="w-5 h-5 mb-1" /> Inventory</button>
-        </div>
+          <button onClick={() => setPage('crm')} className={cn('flex-1 flex flex-col items-center text-xs py-2 transition-colors', page === 'crm' ? 'text-black font-bold' : 'text-gray-400 hover:text-gray-600')}><Users className="w-5 h-5 mb-1" /> CRM</button></div>
       </nav>
     </div>
   );
