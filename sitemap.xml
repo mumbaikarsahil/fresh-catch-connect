@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap-image/1.1">
+  <sitemap>
+    <loc>https://www.thefishymart.com/</loc>
+  </sitemap>
+  <sitemap>
+    <loc>https://www.thefishymart.com/cart</loc>
+  </sitemap>
+  <sitemap>
+    <loc>https://www.thefishymart.com/profile</loc>
+  </sitemap>
+  <sitemap>
+    <loc>https://www.thefishymart.com/about</loc>
+  </sitemap>
+  <sitemap>
+    <loc>https://www.thefishymart.com/contact</loc>
+  </sitemap>
+  <sitemap>
+    <loc>https://www.thefishymart.com/faq</loc>
+  </sitemap>
+</sitemapindex>

@@ -18,6 +18,7 @@ import MaintenancePage from "./pages/MaintenancePage";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import TrackOrder from "./pages/TrackOrder";
+import TermsPage from "./pages/TermsPage";
 
 const queryClient = new QueryClient();
 
@@ -89,6 +90,7 @@ const AppContent = () => {
       <Route path="/trackorder" element={<TrackOrder />} />
       <Route path="/about" element={<About />} />
       <Route path="/contact" element={<Contact />} />
+      <Route path="/terms" element={<TermsPage />} />
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />
     </Routes>

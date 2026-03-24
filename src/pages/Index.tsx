@@ -229,7 +229,7 @@ const Index = () => {
               <ul className="space-y-3 text-sm text-gray-500">
                 <li><a href="/contact" className="hover:text-blue-600 transition-colors">Contact us</a></li>
                 <li><a href="/about" className="hover:text-blue-600 transition-colors">About</a></li>
-                <li><a href="#" className="hover:text-blue-600 transition-colors">Terms of Service</a></li>
+                <li><a href="/terms" className="hover:text-blue-600 transition-colors">Terms of Service</a></li>
                 <li><a href="https://wa.me/919082165743?text=Hello!%20I%20have%20a%20query%20for%20you." className="hover:text-blue-600 transition-colors">Contact via WhatsApp</a></li>
               </ul>
             </div>
@@ -289,9 +289,9 @@ const Index = () => {
               <Phone className="w-4 h-4" /> +91 90821 65743
             </a>
             <div className="flex items-center gap-4 text-xs text-gray-400">
-              <a href="#" className="hover:underline">Terms</a>
-              <a href="#" className="hover:underline">Privacy</a>
-              <a href="#" className="hover:underline">Returns</a>
+              <a href="/terms" className="hover:underline">Terms</a>
+              <a href="/terms" className="hover:underline">Privacy</a>
+              <a href="/terms" className="hover:underline">Returns</a>
             </div>
           </div>
 
