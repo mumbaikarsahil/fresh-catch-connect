@@ -55,6 +55,8 @@ const getFullImageUrl = (path: string) => path?.startsWith('http') ? path : `${B
 
 const AdminMobile: React.FC = () => {
   const [isMaintenance, setIsMaintenance] = useState(false);
+  const [sameDayEnabled, setSameDayEnabled] = useState(true);
+  const [nextDayEnabled, setNextDayEnabled] = useState(true);
   
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
@@ -116,8 +118,13 @@ const AdminMobile: React.FC = () => {
   };
 
   const loadData = async () => {
-    const { data: settings } = await (supabase.from('store_settings') as any).select('is_maintenance').eq('id', 1).single();
-    if (settings) setIsMaintenance(settings.is_maintenance);
+    // ✅ CHANGED: Fetching the new delivery settings along with maintenance mode
+    const { data: settings } = await (supabase.from('store_settings') as any).select('*').eq('id', 1).single();
+    if (settings) {
+      setIsMaintenance(settings.is_maintenance);
+      setSameDayEnabled(settings.same_day_enabled);
+      setNextDayEnabled(settings.next_day_enabled);
+    }
     try {
       setIsLoading(true);
       const { data: productData, error: prodError } = await supabase
@@ -286,6 +293,19 @@ const AdminMobile: React.FC = () => {
      if(error) {
         setProducts(prev => prev.map(p => p.id === product.id ? { ...p, in_stock: !newStatus } : p));
      }
+  };
+
+  // ✅ ADDED: Toggle functions for Delivery Options
+  const toggleSameDay = async () => {
+    const newValue = !sameDayEnabled;
+    setSameDayEnabled(newValue);
+    await (supabase.from('store_settings') as any).update({ same_day_enabled: newValue }).eq('id', 1);
+  };
+
+  const toggleNextDay = async () => {
+    const newValue = !nextDayEnabled;
+    setNextDayEnabled(newValue);
+    await (supabase.from('store_settings') as any).update({ next_day_enabled: newValue }).eq('id', 1);
   };
 
   const handleUpdateStockKg = async (id: string, newKg: number) => {
@@ -621,8 +641,33 @@ const AdminMobile: React.FC = () => {
           />
         )}
 
-        {page === 'inventory' && (
+{page === 'inventory' && (
           <div className="space-y-4 max-w-4xl mx-auto">
+            
+            {/* ✅ ADDED: Store Delivery Settings Card */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+              <h2 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+                <Settings className="w-4 h-4 text-gray-500" /> Delivery Settings
+              </h2>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex items-center justify-between flex-1 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                  <span className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-blue-500" /> Same Day Delivery
+                  </span>
+                  <button onClick={toggleSameDay} className={cn('p-1 rounded-lg transition-all', sameDayEnabled ? 'text-green-600' : 'text-gray-400')}>
+                    {sameDayEnabled ? <ToggleRight className="w-6 h-6" /> : <ToggleLeft className="w-6 h-6" />}
+                  </button>
+                </div>
+                <div className="flex items-center justify-between flex-1 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                  <span className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-purple-500" /> Next Day Delivery
+                  </span>
+                  <button onClick={toggleNextDay} className={cn('p-1 rounded-lg transition-all', nextDayEnabled ? 'text-green-600' : 'text-gray-400')}>
+                    {nextDayEnabled ? <ToggleRight className="w-6 h-6" /> : <ToggleLeft className="w-6 h-6" />}
+                  </button>
+                </div>
+              </div>
+            </div>
             <MenuShareCard products={products} />
 
             <div className="flex justify-between items-center">

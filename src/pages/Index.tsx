@@ -230,7 +230,7 @@ const Index = () => {
                 <li><a href="/contact" className="hover:text-blue-600 transition-colors">Contact us</a></li>
                 <li><a href="/about" className="hover:text-blue-600 transition-colors">About</a></li>
                 <li><a href="#" className="hover:text-blue-600 transition-colors">Terms of Service</a></li>
-                <li><a href="#" className="hover:text-blue-600 transition-colors">FAQ</a></li>
+                <li><a href="https://wa.me/919082165743?text=Hello!%20I%20have%20a%20query%20for%20you." className="hover:text-blue-600 transition-colors">Contact via WhatsApp</a></li>
               </ul>
             </div>
 
@@ -248,7 +248,7 @@ const Index = () => {
                 </li>
                 <li className="flex items-center gap-3">
                   <Mail className="w-4 h-4 text-gray-400 shrink-0" />
-                  <a href="mailto:hello@thefishymart.com" className="hover:text-blue-600 transition-colors">hello@thefishymart.com</a>
+                  <a href="https://wa.me/919082165743?text=Hi%20Support" className="hover:text-blue-600 transition-colors">Help via WhatsApp</a>
                 </li>
               </ul>
             </div>
@@ -257,13 +257,15 @@ const Index = () => {
           {/* Bottom Bar: Copyright & Biillo Badge */}
           <div className="border-t border-gray-200 pt-6 flex flex-col items-center justify-center gap-2">
             <p className="text-xs text-gray-400">
-              © {new Date().getFullYear()} The Fishy Mart. All rights reserved.
+              &copy; {new Date().getFullYear()} The Fishy Mart. All rights reserved.
             </p>
             
             {/* VERY SMALL Powered By Badge */}
             <div className="flex items-center justify-center gap-1 opacity-60 hover:opacity-100 transition-opacity cursor-pointer">
-              <span className="text-[10px] font-medium text-gray-500 uppercase tracking-widest">Powered by</span>
-              <span className="text-xs font-bold text-gray-800 tracking-wide">BIILLO</span>
+              <a href="https://www.biillo.com" className="flex items-center gap-1">
+                <span className="text-[10px] font-medium text-gray-500 uppercase tracking-widest">Powered by</span>
+                <span className="text-xs font-bold text-gray-800 tracking-wide">BIILLO</span>
+              </a>
             </div>
           </div>
 
@@ -297,12 +299,14 @@ const Index = () => {
 
           <div className="flex flex-col items-center gap-1">
             <p className="text-[10px] text-gray-400">
-              © {new Date().getFullYear()} The Fishy Mart.
+              &copy; {new Date().getFullYear()} The Fishy Mart.
             </p>
             {/* VERY SMALL Powered By Badge for Mobile */}
             <div className="flex items-center justify-center gap-1 opacity-50 mt-1">
-              <span className="text-[9px] font-medium text-gray-500 uppercase tracking-widest">Powered by</span>
-              <span className="text-[10px] font-bold text-gray-800 tracking-wide">BIILLO</span>
+              <a href="https://www.biillo.com" className="flex items-center gap-1">
+                <span className="text-[9px] font-medium text-gray-500 uppercase tracking-widest">Powered by</span>
+                <span className="text-[10px] font-bold text-gray-800 tracking-wide">BIILLO</span>
+              </a>
             </div>
           </div>
 

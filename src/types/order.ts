@@ -25,9 +25,10 @@ export interface Order {
   status: OrderStatus; 
   created_at?: string;
   updated_at?: string;
-  // ✅ ADDED: The new payment fields so TypeScript accepts them
   payment_id?: string | null;
   payment_status?: string;
+  // ✅ ADDED: delivery_preference to match the database schema
+  delivery_preference?: string; 
 }
 
 export interface CreateOrderData {
@@ -48,7 +49,14 @@ export interface CreateOrderData {
     imageName: string;
     unit: string; 
   }[];
-  // ✅ ADDED: Allow passing payment info when creating an order
   payment_id?: string | null;
   payment_status?: string;
+}
+
+// ✅ ADDED: A new type for your store settings to use in CartPage and Admin Dashboard
+export interface StoreSettings {
+  id: number;
+  is_maintenance: boolean;
+  same_day_enabled: boolean;
+  next_day_enabled: boolean;
 }

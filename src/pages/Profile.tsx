@@ -131,10 +131,10 @@ const Profile = () => {
           transition={{ delay: 0.4 }}
           className="pt-8 text-center"
         >
-          <div className="flex items-center justify-center gap-1 opacity-60">
+          <a href="https://www.biillo.com" className="flex items-center gap-1">
             <span className="text-[10px] font-medium text-gray-500 uppercase tracking-widest">Powered by</span>
             <span className="text-xs font-bold text-gray-800 tracking-wide">BIILLO</span>
-          </div>
+          </a>
         </motion.div>
 
       </div>
