@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, Phone, ShieldCheck, User, Clock, CheckCircle2, Plus, Minus, Map, Navigation, Home, Building, AlertCircle } from 'lucide-react';
+import { ArrowLeft, MapPin, Phone, ShieldCheck, User, Clock, CheckCircle2, Plus, Minus, Map, Navigation, Home, Building, AlertCircle, Truck, ChevronRight } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { CreateOrderData } from '@/types/order';
 import { Input } from '@/components/ui/input';
@@ -22,10 +22,19 @@ const THANE_PINCODES = ['400601', '400602', '400603', '400604', '400605', '40060
 const MIRA_BHAYANDAR_PINCODES = ['401101', '401105', '401107', '401104'];
 const VASAI_VIRAR_PINCODES = ['401201', '401202', '401203', '401209', '401208', '401207', '401303'];
 
-const isMumbaiPincode = (pin: string) => {
-  const p = parseInt(pin, 10);
-  return p >= 400001 && p <= 400104;
-};
+// Explicitly listed Mumbai Pincodes (excluding Chembur to avoid duplication)
+const MUMBAI_PINCODES = [
+  '400001', '400002', '400003', '400004', '400005', '400006', '400007', '400008', '400009', '400010',
+  '400011', '400012', '400013', '400014', '400015', '400016', '400017', '400018', '400019', '400020',
+  '400021', '400023', '400025', '400026', '400027', '400028', '400029', '400030', '400031', '400032',
+  '400033', '400034', '400035', '400036', '400038', '400039', '400040', '400041', '400042', '400044',
+  '400045', '400046', '400047', '400048', '400049', '400050', '400051', '400052', '400053', '400054',
+  '400055', '400056', '400057', '400058', '400059', '400060', '400061', '400062', '400063', '400064',
+  '400065', '400066', '400067', '400068', '400069', '400072', '400073', '400076', '400077', '400078',
+  '400079', '400080', '400081', '400082', '400083', '400084', '400085', '400087', '400090', '400091',
+  '400092', '400093', '400094', '400095', '400096', '400097', '400098', '400099', '400100', '400101',
+  '400102', '400103', '400104'
+];
 
 // Helper to get the full Supabase storage URL
 const BUCKET_URL = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/products/`;
@@ -60,9 +69,13 @@ export default function CartPage() {
   const [isLocating, setIsLocating] = useState(false); 
   const [deliveryConfig, setDeliveryConfig] = useState({ sameDay: true, nextDay: true });
 
-  // ✅ ADDED: Custom Modal State
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+
+  // --- FREE DELIVERY LOGIC ---
+  const isChembur = pincode.length === 6 && CHEMBUR_PINCODES.includes(pincode);
+  const qualifiesForFreeDelivery = totalItems >= 2 || isChembur;
+  const effectiveDeliveryFee = qualifiesForFreeDelivery ? 0 : deliveryFee;
 
   useEffect(() => {
     if (items.length === 0) navigate('/');
@@ -142,20 +155,20 @@ export default function CartPage() {
   }, [deliveryConfig]);
 
   const handlePincodeChange = (val: string) => {
-    const pin = val.replace(/\D/g, '').slice(0, 6);
+    const pin = String(val).replace(/\D/g, '').slice(0, 6);
     setPincode(pin);
     setPincodeError('');
     
     if (pin.length === 6) {
       if (CHEMBUR_PINCODES.includes(pin)) {
-        setDeliveryFee(65);
-      } else if (
-        isMumbaiPincode(pin) ||
-        NAVI_MUMBAI_PINCODES.includes(pin) ||
-        THANE_PINCODES.includes(pin) ||
-        MIRA_BHAYANDAR_PINCODES.includes(pin) ||
-        VASAI_VIRAR_PINCODES.includes(pin)
-      ) {
+        setDeliveryFee(0); // FREE
+      } else if (THANE_PINCODES.includes(pin)) {
+        setDeliveryFee(99);
+      } else if (MIRA_BHAYANDAR_PINCODES.includes(pin)) {
+        setDeliveryFee(109);
+      } else if (VASAI_VIRAR_PINCODES.includes(pin)) {
+        setDeliveryFee(200);
+      } else if (MUMBAI_PINCODES.includes(pin) || NAVI_MUMBAI_PINCODES.includes(pin)) {
         setDeliveryFee(85);
       } else {
         setDeliveryFee(0);
@@ -186,11 +199,16 @@ export default function CartPage() {
       if (error && error.code !== 'PGRST116') throw error;
 
       if (data) {
-        const customer = data as { customer_name: string; delivery_address: string; pincode: string | null };
-        setCustomerName(customer.customer_name);
-        setAddress(customer.delivery_address);
-        if (customer.pincode) handlePincodeChange(customer.pincode);
-        setIsExistingCustomer(true);
+        const customer = data as { customer_name: string; delivery_address: string; pincode: string | number | null };
+        setCustomerName(customer.customer_name || '');
+        
+        if (customer.pincode && String(customer.pincode).length === 6) {
+          setAddress(customer.delivery_address || '');
+          handlePincodeChange(String(customer.pincode));
+          setIsExistingCustomer(true);
+        } else {
+          setIsExistingCustomer(false);
+        }
       } else {
         setIsExistingCustomer(false);
       }
@@ -217,7 +235,7 @@ export default function CartPage() {
         const data = await res.json();
         
         if (data && data.address) {
-          if (data.address.postcode) handlePincodeChange(data.address.postcode);
+          if (data.address.postcode) handlePincodeChange(String(data.address.postcode));
           const detectedArea = data.address.suburb || data.address.neighbourhood || data.address.city_district || '';
           if (detectedArea) setArea(detectedArea);
         } else {
@@ -238,7 +256,13 @@ export default function CartPage() {
   };
 
   const handleSaveDetails = () => {
-    if (!isExistingCustomer) {
+    if (isExistingCustomer) {
+      if (!pincode || pincode.length !== 6 || pincodeError) {
+        setValidationErrors(["Your saved address is missing a valid pincode. Please click 'Change / Add New'."]);
+        setShowErrorModal(true);
+        return;
+      }
+    } else {
       const formErrors = [];
       if (!customerName.trim()) formErrors.push("Your Name");
       if (pincode.length !== 6 || pincodeError) formErrors.push("A Valid 6-Digit Pincode");
@@ -258,7 +282,6 @@ export default function CartPage() {
   };
 
   const handlePayment = async () => {
-    // ✅ CHANGED: Trigger the custom modal instead of the browser alert
     const missingFields = [];
     if (step !== 'saved') missingFields.push("Delivery Address");
     if (!deliveryOption) missingFields.push("Preferred Delivery Time");
@@ -270,7 +293,7 @@ export default function CartPage() {
     }
 
     setIsSubmitting(true);
-    const finalTotalAmount = totalAmount + deliveryFee;
+    const finalTotalAmount = totalAmount + effectiveDeliveryFee;
 
     try {
       const orderData: CreateOrderData = {
@@ -278,7 +301,7 @@ export default function CartPage() {
         phone_number: phone,
         delivery_address: address, 
         pincode: pincode,
-        delivery_fee: deliveryFee, 
+        delivery_fee: effectiveDeliveryFee, 
         delivery_preference: deliveryOption, 
         total_amount: finalTotalAmount, 
         status: 'pending', 
@@ -342,7 +365,6 @@ export default function CartPage() {
 
   return (
     <ResponsiveLayout hideFloatingCart={true} showBottomNav={false}>
-      {/* ✅ ADDED: Beautiful Custom Validation Modal */}
       {showErrorModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div 
@@ -498,7 +520,11 @@ export default function CartPage() {
                         </button>
                       </div>
                       {pincodeError && <p className="text-xs text-red-500 ml-1 -mt-2">{pincodeError}</p>}
-                      {!pincodeError && pincode.length === 6 && deliveryFee > 0 && <p className="text-xs text-green-600 ml-1 -mt-2 font-medium">Delivery available! Fee: ₹{deliveryFee}</p>}
+                      {!pincodeError && pincode.length === 6 && deliveryFee > 0 && !isChembur && (
+                        <p className="text-xs text-green-600 ml-1 -mt-2 font-medium">
+                          Delivery available! {qualifiesForFreeDelivery ? 'Fee: ₹0 (Free Delivery Unlocked)' : `Fee: ₹${deliveryFee}`}
+                        </p>
+                      )}
 
                       <div className="relative">
                          <Home className="absolute left-3 top-3.5 h-4 w-4 text-gray-400" />
@@ -559,6 +585,45 @@ export default function CartPage() {
                 </div>
               )}
             </div>
+
+            {/* ZOMATO STYLE FREE DELIVERY BANNER / NOTIFICATION */}
+            {qualifiesForFreeDelivery ? (
+              <div className="rounded-2xl p-5 shadow-sm border transition-all duration-300 bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 bg-green-100 text-green-600">
+                    <CheckCircle2 className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-green-800">
+                      {isChembur && totalItems < 2 ? "Free Delivery in Chembur 🎉" : "Yay! Free Delivery Unlocked 🎉"}
+                    </h4>
+                    <p className="text-sm mt-0.5 text-green-700">
+                      You've successfully waived off the delivery charges for this order.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <button 
+                onClick={() => navigate('/')}
+                className="w-full text-left rounded-2xl p-5 shadow-sm border transition-all duration-300 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 hover:shadow-md hover:from-blue-100 hover:to-indigo-100 active:scale-[0.98]"
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 bg-blue-100 text-blue-600 shadow-inner">
+                      <Truck className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-blue-900">Get Free Delivery! 🚚</h4>
+                      <p className="text-sm mt-0.5 text-blue-700">
+                        Add 1 more item or increase quantity to waive delivery fees.
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-blue-400 flex-shrink-0" />
+                </div>
+              </button>
+            )}
 
             <div className={cn(
               "bg-white rounded-2xl p-5 md:p-6 shadow-sm border border-gray-100/50 space-y-4 transition-all duration-300",
@@ -648,7 +713,9 @@ export default function CartPage() {
                   <div className="flex justify-between items-center text-sm">
                      <span className="text-gray-600">Delivery Fee</span>
                      <span className="font-semibold text-gray-900">
-                        {step === 'saved' ? `₹${deliveryFee.toFixed(2)}` : 'Calculated at checkout'}
+                        {step === 'saved' 
+                          ? (effectiveDeliveryFee === 0 ? <span className="text-green-600 font-bold">Free</span> : `₹${effectiveDeliveryFee.toFixed(2)}`) 
+                          : 'Calculated at checkout'}
                      </span>
                   </div>
                </div>
@@ -656,7 +723,7 @@ export default function CartPage() {
                <div className="flex justify-between items-center pt-1">
                   <span className="font-bold text-gray-900">To Pay</span>
                   <span className="font-extrabold text-xl text-gray-900">
-                     ₹{(totalAmount + (step === 'saved' ? deliveryFee : 0)).toFixed(2)}
+                     ₹{(totalAmount + (step === 'saved' ? effectiveDeliveryFee : 0)).toFixed(2)}
                   </span>
                </div>
                
